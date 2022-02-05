@@ -302,8 +302,8 @@ class Node(ABC):
     def formConnection(self, connector: Connection or Node) -> Connection:
         if isinstance(connector, Connection):
             if connector.node == self:
-                return connector.inverse
-            elif connector.inverse.node == self:
+                return ~connector
+            elif (~connector).node == self:
                 return connector
             else:
                 raise Connection.IrrelevantConnectionError(f"Connection, {connector}, does not involve node, {self}")
@@ -604,10 +604,6 @@ class Connection:
     @property
     def node(self) -> Node:
         return self._node.node
-
-    @property
-    def inverse(self) -> Connection:
-        return self._inverse
 
     def retrieveState(self, exclude: [Node,]) -> [bool, bool]:
         return self._node.retrieveState(exclude)
