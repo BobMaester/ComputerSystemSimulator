@@ -16,21 +16,26 @@ class AddressingMode(ABC):
 
     @staticmethod
     @abstractmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-        pass
-
-    @staticmethod
-    def assembleLabel(labelAddress: int, instructionAddress: int) -> bytes:
-        return labelAddress.to_bytes(2, "little")
-
-    @staticmethod
-    @abstractmethod
     def fetchOperand(processor: Component, fetchCount: int) -> [bool, bytes]:
         pass
 
     @staticmethod
-    def relativeLabel(labelAddress: int, instructionAddress: int) -> bytes:
-        return bytes([labelAddress - instructionAddress])
+    @abstractmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
+
+    class LabelModes:
+        @staticmethod
+        def immediateLabel(labelAddress: int, instructionAddress: int = None) -> bytes:
+            return labelAddress.to_bytes(2, "little")
+
+        @staticmethod
+        def relativeLabel(labelAddress: int, instructionAddress: int) -> bytes:
+            return bytes([labelAddress - instructionAddress])
+
+    @staticmethod
+    def assembleLabel(labelAddress: int, instructionAddress: int) -> bytes:
+        return AddressingMode.LabelModes.immediateLabel(labelAddress)
 
 class DynamicOperation(Operation):
     def __init__(self, mnemonic: str, execute: callable):
@@ -45,19 +50,19 @@ class DynamicOperation(Operation):
         self._execute(processor, addressingMode)
 
 class DynamicAddressingMode(AddressingMode):
-    def __init__(self, assemble: callable, fetchOperand: callable, assembleLabel: callable = AddressingMode.assembleLabel):
+    def __init__(self, fetchOperand: callable, assemble: callable, assembleLabel: callable = AddressingMode.LabelModes.immediateLabel):
         self._assemble = assemble
         self._fetchOperand = fetchOperand
         self._assembleLabel = assembleLabel
+
+    def fetchOperand(self, processor: Component, fetchCount: int) -> [bool, bytes]:
+        return self._fetchOperand(processor, fetchCount)
 
     def assemble(self, operandString: str, address: int = 0, symbols: [str,] = tuple()) -> [bytes, [[int, str],]]:
         return self._assemble(operandString, address, symbols)
 
     def assembleLabel(self, labelAddress: int, instructionAddress: int) -> bytes:
         return self._assembleLabel(labelAddress, instructionAddress)
-
-    def fetchOperand(self, processor: Component, fetchCount: int) -> [bool, bytes]:
-        return self._fetchOperand(processor, fetchCount)
 
 class InstructionSet:
     @staticmethod
