@@ -295,10 +295,6 @@ class Component(ABC):
         self.response()
 
 class Node(ABC):
-    @abstractmethod
-    def retrieveState(self, exclude: [Node,]) -> [bool, bool]:
-        pass
-
     def formConnection(self, connector: Connection or Node) -> Connection:
         if isinstance(connector, Connection):
             if connector.node == self:
@@ -311,6 +307,127 @@ class Node(ABC):
             return Connection(self, connector)
         else:
             raise TypeError(f"Can only form connection using type Connection or Node not {type(connector).__name__} ({connector})")
+
+    @abstractmethod
+    def retrieveState(self, exclude: [Node, ]) -> [bool, bool]:
+        pass
+
+class Connection:
+    class ExcludedNodeError(Exception):
+        pass
+
+    class ConnectionNotFoundError(Exception):
+        pass
+
+    class IrrelevantConnectionError(ValueError):
+        pass
+
+    @staticmethod
+    def connectComponents(component1: Component, component2: Component, mapping: [[int or str, int or str],]):
+        component1.connectComponent(component2, mapping)
+
+    class _ConnectionNode(ABC):
+        _node = None
+
+        @property
+        def node(self) -> Node:
+            return self._node
+
+        @abstractmethod
+        def connect(self, connection: Connection or Node):
+            pass
+
+        @abstractmethod
+        def disconnect(self, connection: Connection or Node):
+            pass
+
+        @abstractmethod
+        def retrieveState(self, exclude: [Node,]) -> [bool, bool]:
+            pass
+
+    class _PinConnection(_ConnectionNode):
+        def __init__(self, pin: Pin):
+            if isinstance(pin, Pin):
+                self._node = pin
+            else:
+                raise TypeError(f"Only Pins can be used in a PinConnection (not {pin})")
+
+        def connect(self, connection: Connection or Node):
+            self._node.connection = connection
+
+        def disconnect(self, connection: Connection or Node):
+            if connection == self._node.connection:
+                del self._node.connection
+
+        def retrieveState(self, exclude: [Node,]):
+            return self._node.state
+
+    class _WireConnection(_ConnectionNode):
+        def __init__(self, wire: Wire):
+            if isinstance(wire, Wire):
+                self._node = wire
+            else:
+                raise TypeError(f"Only Wires can be used in a WireConnection (not {wire})")
+
+        def connect(self, connection: Connection or Node):
+            self._node.connect(connection)
+
+        def disconnect(self, connection: Connection or Node):
+            self._node.disconnect(connection)
+
+        def retrieveState(self, exclude: [Node,]) -> [bool, bool]:
+            return self._node.retrieveState(exclude)
+
+    def __init__(self, source: Node, target: Node, inverse: Connection = None):
+        if not isinstance(target, Node):
+            raise TypeError(f"Connections can only connect nodes to other nodes (not {source.__name__} to {target.__name__})")
+        if isinstance(target, Pin):
+            self._node = Connection._PinConnection(target)
+        elif isinstance(target, Wire):
+            self._node = Connection._WireConnection(target)
+        else:
+            raise TypeError(f"Unknown Node type, cannot connect {target.__name__}")
+        if inverse is not None:
+            if not isinstance(inverse, Connection):
+                raise TypeError("The inverse should only be used during initialisation of a connection pair and must itself be a Connection instance")
+            self._inverse = inverse
+        else:
+            self._inverse = Connection(target, source, self)
+            self._node.connect(self._inverse)
+            self._inverse._node.connect(self)
+
+    def __del__(self):
+        try:
+            if self._node is not None:
+                node = self._node
+                self._node = None
+                try:
+                    node.disconnect(self)
+                except Connection.ConnectionNotFoundError:
+                    pass
+            elif self._inverse._inverse is not None:
+                inverse = self._inverse
+                self._inverse = None
+                del inverse
+        except AttributeError:
+            pass
+
+    def __invert__(self) -> Connection:
+        return self._inverse
+
+    def __eq__(self, other: Connection) -> bool:
+        if isinstance(other, Connection):
+            return self._node == other._node
+        return False
+
+    @property
+    def node(self) -> Node:
+        return self._node.node
+
+    # TODO incomplete (more methods)
+
+    def retrieveState(self, exclude: [Node,]) -> [bool, bool]:
+        return self._node.retrieveState(exclude)
 
 class Pin(Node):
     class UnauthorisedComponentError(Exception):
@@ -492,118 +609,3 @@ class Wire(Node):
 
     def __delitem__(self, identifier: Connection or Node or int):
         self.disconnect(identifier)
-
-class Connection:
-    class ExcludedNodeError(Exception):
-        pass
-
-    class ConnectionNotFoundError(Exception):
-        pass
-
-    class IrrelevantConnectionError(ValueError):
-        pass
-
-    @staticmethod
-    def connectComponents(component1: Component, component2: Component, mapping: [[int or str, int or str],]):
-        component1.connectComponent(component2, mapping)
-
-    class _ConnectionNode(ABC):
-        _node = None
-
-        @property
-        def node(self) -> Node:
-            return self._node
-
-        @abstractmethod
-        def connect(self, connection: Connection):
-            pass
-
-        @abstractmethod
-        def disconnect(self, connection: Connection):
-            pass
-
-        @abstractmethod
-        def retrieveState(self, exclude: [Node,]) -> [bool, bool]:
-            pass
-
-    class _PinConnection(_ConnectionNode):
-        def __init__(self, pin: Pin):
-            if isinstance(pin, Pin):
-                self._node = pin
-            else:
-                raise TypeError(f"Only Pins can be used in a PinConnection (not {pin})")
-
-        def connect(self, connection: Connection):
-            self._node.connection = connection
-
-        def disconnect(self, connection: Connection):
-            if connection == self._node.connection:
-                del self._node.connection
-
-        def retrieveState(self, exclude: [Node,]):
-            return self._node.state
-
-    class _WireConnection(_ConnectionNode):
-        def __init__(self, wire: Wire):
-            if isinstance(wire, Wire):
-                self._node = wire
-            else:
-                raise TypeError(f"Only Wires can be used in a WireConnection (not {wire})")
-
-        def connect(self, connection: Connection):
-            self._node.connect(connection)
-
-        def disconnect(self, connection: Connection):
-            self._node.disconnect(connection)
-
-        def retrieveState(self, exclude: [Node,]) -> [bool, bool]:
-            return self._node.retrieveState(exclude)
-
-    def __init__(self, source: Node, target: Node, inverse: Connection = None):
-        if not isinstance(target, Node):
-            raise TypeError(f"Connections can only connect nodes to other nodes (not {source.__name__} to {target.__name__})")
-        if isinstance(target, Pin):
-            self._node = Connection._PinConnection(target)
-        elif isinstance(target, Wire):
-            self._node = Connection._WireConnection(target)
-        else:
-            raise TypeError(f"Unknown Node type, cannot connect {target.__name__}")
-        if inverse is not None:
-            if not isinstance(inverse, Connection):
-                raise TypeError("The inverse should only be used during initialisation of a connection pair and must itself be a Connection instance")
-            self._inverse = inverse
-        else:
-            self._inverse = Connection(target, source, self)
-            self._node.connect(self._inverse)
-            self._inverse._node.connect(self)
-
-    def __del__(self):
-        try:
-            if self._node is not None:
-                node = self._node
-                self._node = None
-                try:
-                    node.disconnect(self)
-                except Connection.ConnectionNotFoundError:
-                    pass
-            elif self._inverse._inverse is not None:
-                inverse = self._inverse
-                self._inverse = None
-                del inverse
-        except AttributeError:
-            pass
-
-    def __invert__(self) -> Connection:
-        return self._inverse
-
-    def __eq__(self, other: Connection) -> bool:
-        if isinstance(other, Connection):
-            return self._node == other._node
-        return False
-
-    @property
-    def node(self) -> Node:
-        return self._node.node
-
-    def retrieveState(self, exclude: [Node,]) -> [bool, bool]:
-        return self._node.retrieveState(exclude)
