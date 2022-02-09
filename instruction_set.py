@@ -26,16 +26,16 @@ class AddressingMode(ABC):
 
     class LabelModes:
         @staticmethod
-        def immediateLabel(labelAddress: int, instructionAddress: int = None) -> bytes:
+        def immediateLabel16Bit(labelAddress: int, instructionAddress: int = None) -> bytes:
             return labelAddress.to_bytes(2, "little")
 
         @staticmethod
-        def relativeLabel(labelAddress: int, instructionAddress: int) -> bytes:
+        def relativeLabel8Bit(labelAddress: int, instructionAddress: int) -> bytes:
             return bytes([labelAddress - instructionAddress])
 
     @staticmethod
     def assembleLabel(labelAddress: int, instructionAddress: int) -> bytes:
-        return AddressingMode.LabelModes.immediateLabel(labelAddress)
+        return AddressingMode.LabelModes.immediateLabel16Bit(labelAddress)
 
 class DynamicOperation(Operation):
     def __init__(self, mnemonic: str, execute: callable):
@@ -50,7 +50,7 @@ class DynamicOperation(Operation):
         self._execute(processor, addressingMode)
 
 class DynamicAddressingMode(AddressingMode):
-    def __init__(self, fetchOperand: callable, assemble: callable, assembleLabel: callable = AddressingMode.LabelModes.immediateLabel):
+    def __init__(self, fetchOperand: callable, assemble: callable, assembleLabel: callable = AddressingMode.LabelModes.immediateLabel16Bit):
         self._assemble = assemble
         self._fetchOperand = fetchOperand
         self._assembleLabel = assembleLabel
