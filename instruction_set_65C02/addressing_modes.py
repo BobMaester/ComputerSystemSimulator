@@ -160,4 +160,4 @@ class AddressingModes: # TODO
 
         @staticmethod
         def assembleLabel(labelAddress: int, instructionAddress: int) -> bytes:
-            return AddressingMode.relativeLabel(labelAddress, instructionAddress)
+            return AddressingMode.LabelModes.relativeLabel8Bit(labelAddress, instructionAddress)
