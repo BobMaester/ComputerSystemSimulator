@@ -102,7 +102,7 @@ class Clock(Component):
         self._output = False
 
     def response(self):
-        high, low = self._getPinsStates(("VCC", "GND"))
+        high, low = self.getPinsStates(("VCC", "GND"))
         self._makePinsPassive(slice(None))
         if self._output:
             self._setPinState("Output", high)
@@ -120,7 +120,7 @@ class QuadNANDGate(Component):
         )
 
     def response(self):
-        high, low = self._getPinsStates(("VCC", "GND"))
+        high, low = self.getPinsStates(("VCC", "GND"))
         self._makePinsPassive(slice(None))
         for gate in range(1, 5):
             value = self.getPin(f"A{gate}") + self.getPin(f"B{gate}")
@@ -178,7 +178,7 @@ class Button(Component):
         self._pressed = False
 
     def response(self):
-        pin1, pin2, pin3, pin4 = self._getPinsStates(slice(None))
+        pin1, pin2, pin3, pin4 = self.getPinsStates(slice(None))
         side1 = BinElec.combine(pin1, pin2)
         side2 = BinElec.combine(pin3, pin4)
         if self._pressed:
@@ -191,7 +191,7 @@ class Resistor(Component):
         super().__init__(2, pinValues, connections)
 
     def response(self):
-        pin1, pin2 = self._getPinsStates(slice(None))
+        pin1, pin2 = self.getPinsStates(slice(None))
         if pin1[1] != pin2[1]:
             if pin1[1]:
                 self._setPinState(2, pin1)
