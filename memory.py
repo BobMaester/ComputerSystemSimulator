@@ -148,7 +148,7 @@ class SpecificMemory(Memory):
             self.write(addresses[index], values[index : index + 1])
 
     def response(self):
-        high, low = self._getPinsStates((28, 14))
+        high, low = self.getPinsStates((28, 14))
         self._makePinsPassive(slice(None))
         if self.getPin(20) == high[0]:
             addressPins = 10, 9, 8, 7, 6, 5, 4, 3, 25, 24, 21, 23, 2, 26, 1
