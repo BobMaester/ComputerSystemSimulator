@@ -330,7 +330,7 @@ class Connection:
             return self._node
 
         @abstractmethod
-        def connect(self, connection: Connection or Node):
+        def connect(self, connector: Connection or Node):
             pass
 
         @abstractmethod
@@ -348,10 +348,10 @@ class Connection:
             else:
                 raise TypeError(f"Only Pins can be used in a PinConnection (not {pin})")
 
-        def connect(self, connection: Connection or Node):
-            self._node.connection = connection
+        def connect(self, connector: Connection or Node):
+            self._node.connection = connector
 
-        def disconnect(self, connection: Connection or Node):
+        def disconnect(self, connection: Connection or Node = None):
             if connection == self._node.connection:
                 del self._node.connection
 
@@ -365,8 +365,8 @@ class Connection:
             else:
                 raise TypeError(f"Only Wires can be used in a WireConnection (not {wire})")
 
-        def connect(self, connection: Connection or Node):
-            self._node.connect(connection)
+        def connect(self, connector: Connection or Node):
+            self._node.connect(connector)
 
         def disconnect(self, connection: Connection or Node):
             self._node.disconnect(connection)
@@ -389,8 +389,8 @@ class Connection:
             self._inverse = inverse
         else:
             self._inverse = Connection(target, source, self)
-            self._node.connect(self._inverse)
-            self._inverse._node.connect(self)
+            self.connect(self._inverse)
+            self._inverse.connect(self)
 
     def __del__(self):
         try:
@@ -402,9 +402,7 @@ class Connection:
                 except Connection.ConnectionNotFoundError:
                     pass
             elif self._inverse._inverse is not None:
-                inverse = self._inverse
-                self._inverse = None
-                del inverse
+                del self._inverse
         except AttributeError:
             pass
 
@@ -420,7 +418,11 @@ class Connection:
     def node(self) -> Node:
         return self._node.node
 
-    # TODO incomplete (more methods)
+    def connect(self, connector: Connection or Node):
+        self._node.connect(connector)
+
+    def disconnect(self, connection: Connection or Node = None):
+        self._node.disconnect(connection)
 
     def retrieveState(self, exclude: [Node,]) -> [bool, bool]:
         return self._node.retrieveState(exclude)
