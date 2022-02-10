@@ -65,7 +65,7 @@ class Component(ABC):
     def pins(self) -> [str,]:
         pinNames = list()
         for pin in self._pins:
-            pinNames.append(pin)
+            pinNames.append(pin.identifier)
         return pinNames
 
     @property
@@ -163,7 +163,7 @@ class Component(ABC):
             self.state = state
             raise error
 
-    def _getPinActivity(self, pin: int or str) -> bool:
+    def getPinActivity(self, pin: int or str) -> bool:
         return self._pinSelect(pin).activity
 
     def _makePinActive(self, pin: int or str):
@@ -175,7 +175,7 @@ class Component(ABC):
     def _setPinActivity(self, pin: int or str, activity: bool or int):
         self._pinSelect(pin).setActivity(self, activity)
 
-    def _getPinsActivities(self, pins: [int or str,] or slice) -> [bool,]:
+    def getPinsActivities(self, pins: [int or str, ] or slice) -> [bool, ]:
         activities = list()
         for pin in self._pinsSelect(pins):
             activities.append(pin.activity)
@@ -206,13 +206,13 @@ class Component(ABC):
             self.state = state
             raise error
 
-    def _getPinState(self, pin: int or str) -> [bool, bool]:
+    def getPinState(self, pin: int or str) -> [bool, bool]:
         return self._pinSelect(pin).state
 
     def _setPinState(self, pin: int or str, state: [bool or int, bool or int]):
         self._pinSelect(pin).setState(self, state)
 
-    def _getPinsStates(self, pins: [int or str,] or slice) -> [[bool, bool],]:
+    def getPinsStates(self, pins: [int or str, ] or slice) -> [[bool, bool], ]:
         states = list()
         for pin in self._pinsSelect(pins):
             states.append(pin.state)
@@ -236,7 +236,7 @@ class Component(ABC):
 
     @property
     def state(self) -> {str: any}:
-        return {"pins": self._getPinsStates(slice(None))}
+        return {"pins": self.getPinsStates(slice(None))}
 
     @state.setter
     def state(self, state: {str: any}):
@@ -309,7 +309,7 @@ class Node(ABC):
             raise TypeError(f"Can only form connection using type Connection or Node not {type(connector).__name__} ({connector})")
 
     @abstractmethod
-    def retrieveState(self, exclude: [Node, ]) -> [bool, bool]:
+    def retrieveState(self, exclude: [Node,]) -> [bool, bool]:
         pass
 
 class Connection:
@@ -321,10 +321,6 @@ class Connection:
 
     class IrrelevantConnectionError(ValueError):
         pass
-
-    @staticmethod
-    def connectComponents(component1: Component, component2: Component, mapping: [[int or str, int or str],]):
-        component1.connectComponent(component2, mapping)
 
     class _ConnectionNode(ABC):
         _node = None
