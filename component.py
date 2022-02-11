@@ -322,7 +322,7 @@ class Connection:
     class IrrelevantConnectionError(ValueError):
         pass
 
-    class _ConnectionNode(ABC):
+    class _NodeConnection(ABC):
         _node = None
 
         @property
@@ -341,7 +341,7 @@ class Connection:
         def retrieveState(self, exclude: [Node,]) -> [bool, bool]:
             pass
 
-    class _PinConnection(_ConnectionNode):
+    class _PinConnection(_NodeConnection):
         def __init__(self, pin: Pin):
             if isinstance(pin, Pin):
                 self._node = pin
@@ -358,7 +358,7 @@ class Connection:
         def retrieveState(self, exclude: [Node,]):
             return self._node.state
 
-    class _WireConnection(_ConnectionNode):
+    class _WireConnection(_NodeConnection):
         def __init__(self, wire: Wire):
             if isinstance(wire, Wire):
                 self._node = wire
