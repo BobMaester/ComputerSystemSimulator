@@ -50,11 +50,11 @@ class PowerSupply(Component):
     @state.deleter
     def state(self):
         Component.state.__delete__(self)
-        self._makePinsActive((1, 2))
+        self.makePinsActive((1, 2))
         self._power = False
 
     def response(self):
-        self._setPinsStates((1, 2), ((self._power, True), (False, True)))
+        self.setPinsStates((1, 2), ((self._power, True), (False, True)))
 
 class Clock(Component):
     def __init__(self, output: bool or int = False, pinValues: [bool or int,] or bytes = tuple(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
@@ -103,11 +103,11 @@ class Clock(Component):
 
     def response(self):
         high, low = self.getPinsStates(("VCC", "GND"))
-        self._makePinsPassive(slice(None))
+        self.makePinsPassive(slice(None))
         if self._output:
-            self._setPinState("Output", high)
+            self.setPinState("Output", high)
         else:
-            self._setPinState("Output", low)
+            self.setPinState("Output", low)
 
 class QuadNANDGate(Component):
     def __init__(self, pinValues: [bool or int,] or bytes = tuple(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
@@ -121,13 +121,13 @@ class QuadNANDGate(Component):
 
     def response(self):
         high, low = self.getPinsStates(("VCC", "GND"))
-        self._makePinsPassive(slice(None))
+        self.makePinsPassive(slice(None))
         for gate in range(1, 5):
             value = self.getPin(f"A{gate}") + self.getPin(f"B{gate}")
             if value == 1:
-                self._setPinState(f"Y{gate}", high)
+                self.setPinState(f"Y{gate}", high)
             else:
-                self._setPinState(f"Y{gate}", low)
+                self.setPinState(f"Y{gate}", low)
 
 class Button(Component):
     def __init__(self, isPressed: bool or int = False, pinValues: [bool or int,] or bytes = tuple(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
@@ -183,8 +183,8 @@ class Button(Component):
         side2 = BinElec.combine(pin3, pin4)
         if self._pressed:
             side1 = side2 = BinElec.combine(side1, side2)
-        self._setPinsStates((1, 2), side1)
-        self._setPinsStates((3, 4), side2)
+        self.setPinsStates((1, 2), side1)
+        self.setPinsStates((3, 4), side2)
 
 class Resistor(Component):
     def __init__(self, pinValues: [bool or int,] or bytes = tuple(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
@@ -194,6 +194,6 @@ class Resistor(Component):
         pin1, pin2 = self.getPinsStates(slice(None))
         if pin1[1] != pin2[1]:
             if pin1[1]:
-                self._setPinState(2, pin1)
+                self.setPinState(2, pin1)
             else:
-                self._setPinState(1, pin2)
+                self.setPinState(1, pin2)

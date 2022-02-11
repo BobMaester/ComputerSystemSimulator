@@ -15,40 +15,7 @@ import random
 
 class TestComponent(Component):
     def response(self):
-        pass
-
-    def pinSelect(self, pin: int or str) -> Pin:
-        return self.pinSelect(pin)
-
-    def pinsSelect(self, pins: [int or str,] or slice) -> [Pin,]:
-        return self.pinsSelect(pins)
-
-    def makePinActive(self, pin: int or str):
-        self._makePinActive(pin)
-
-    def makePinPassive(self, pin: int or str):
-        self._makePinPassive(pin)
-
-    def setPinActivity(self, pin: int or str, activity: bool or int):
-        self._setPinActivity(pin, activity)
-
-    def makePinsActive(self, pins: [int or str,] or slice):
-        self._makePinsActive(pins)
-
-    def makePinsPassive(self, pins: [int or str,] or slice):
-        self._makePinsPassive(pins)
-
-    def setPinsActivity(self, pins: [int or str,] or slice, activity: bool or int):
-        self._setPinsActivity(pins, activity)
-
-    def setPinsActivities(self, pins: [int or str,] or slice, activities: [bool or int,] or bytes):
-        self._setPinsActivities(pins, activities)
-
-    def setPinState(self, pin: int or str, state: [bool or int, bool or int]):
-        self._setPinState(pin, state)
-
-    def setPinsStates(self, pins: [int or str,] or slice, states: [[bool or int, bool or int],]):
-        self._setPinsStates(pins, states)
+        print(f"TestComponent.response({self})")
 
 class Component_test(unittest.TestCase):
     pass

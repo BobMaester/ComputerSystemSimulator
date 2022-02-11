@@ -149,7 +149,7 @@ class SpecificMemory(Memory):
 
     def response(self):
         high, low = self.getPinsStates((28, 14))
-        self._makePinsPassive(slice(None))
+        self.makePinsPassive(slice(None))
         if self.getPin(20) == high[0]:
             addressPins = 10, 9, 8, 7, 6, 5, 4, 3, 25, 24, 21, 23, 2, 26, 1
             dataPins = 11, 12, 13, 15, 16, 17, 18, 19
@@ -166,9 +166,9 @@ class SpecificMemory(Memory):
                 data = bytes_to_tuple(self.read(address))[::-1]
                 for bit in range(8):
                     if data[bit]:
-                        self._setPinState(dataPins[bit], high)
+                        self.setPinState(dataPins[bit], high)
                     else:
-                        self._setPinState(dataPins[bit], low)
+                        self.setPinState(dataPins[bit], low)
 
 class ReadOnlyMemory(SpecificMemory):
     def __init__(self, data: [bytes,] or bytes or str = tuple(), pinValues: [bool or int,] or bytes = tuple(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
@@ -195,6 +195,6 @@ class RandomAccessMemory(SpecificMemory):
     def response(self):
         if not self.getPin(28):
             del self.data
-            self._makePinsPassive(slice(None))
+            self.makePinsPassive(slice(None))
         else:
             super().response()

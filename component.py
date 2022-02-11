@@ -95,7 +95,7 @@ class Component(ABC):
     def pinIdentifier(self, pin: int or str) -> str:
         return self._pins[self.pinIndex(pin)].identifier
 
-    def _pinSelect(self, pin: int or str) -> Pin:
+    def pinSelect(self, pin: int or str) -> Pin:
         return self._pins[self.pinIndex(pin) - 1]
 
     def pinsIndexes(self, pins: [int or str,] or slice) -> [int,]:
@@ -114,40 +114,40 @@ class Component(ABC):
             identifiers.append(self._pins[index - 1].identifier)
         return identifiers
 
-    def _pinsSelect(self, pins: [int or str,] or slice) -> [Pin,]:
+    def pinsSelect(self, pins: [int or str, ] or slice) -> [Pin, ]:
         pinsObjects = list()
         for index in self.pinsIndexes(pins):
             pinsObjects.append(self._pins[index - 1])
         return tuple(pinsObjects)
 
     def getPin(self, pin: int or str) -> bool:
-        return self._pinSelect(pin).value
+        return self.pinSelect(pin).value
 
     def setPin(self, pin: int or str):
-        self._pinSelect(pin).set()
+        self.pinSelect(pin).set()
 
     def resetPin(self, pin: int or str):
-        self._pinSelect(pin).reset()
+        self.pinSelect(pin).reset()
 
     def setPinValue(self, pin: int or str, value: bool or int):
-        self._pinSelect(pin).value = value
+        self.pinSelect(pin).value = value
 
     def getPins(self, pins: [int or str,] or slice) -> [bool,]:
         values = list()
-        for pin in self._pinsSelect(pins):
+        for pin in self.pinsSelect(pins):
             values.append(pin.value)
         return tuple(values)
 
     def setPins(self, pins: [int or str,] or slice):
-        for pin in self._pinsSelect(pins):
+        for pin in self.pinsSelect(pins):
             pin.set()
 
     def resetPins(self, pins: [int or str,] or slice):
-        for pin in self._pinsSelect(pins):
+        for pin in self.pinsSelect(pins):
             pin.reset()
 
     def setPinsValue(self, pins: [int or str,] or slice, value: bool or int):
-        for pin in self._pinsSelect(pins):
+        for pin in self.pinsSelect(pins):
             pin.value = value
 
     def setPinsValues(self, pins: [int or str,] or slice, values: [bool or int,] or bytes):
@@ -164,36 +164,36 @@ class Component(ABC):
             raise error
 
     def getPinActivity(self, pin: int or str) -> bool:
-        return self._pinSelect(pin).activity
+        return self.pinSelect(pin).activity
 
-    def _makePinActive(self, pin: int or str):
-        self._pinSelect(pin).active()
+    def makePinActive(self, pin: int or str):
+        self.pinSelect(pin).active()
 
-    def _makePinPassive(self, pin: int or str):
-        self._pinSelect(pin).passive()
+    def makePinPassive(self, pin: int or str):
+        self.pinSelect(pin).passive()
 
-    def _setPinActivity(self, pin: int or str, activity: bool or int):
-        self._pinSelect(pin).activity = activity
+    def setPinActivity(self, pin: int or str, activity: bool or int):
+        self.pinSelect(pin).activity = activity
 
     def getPinsActivities(self, pins: [int or str,] or slice) -> [bool,]:
         activities = list()
-        for pin in self._pinsSelect(pins):
+        for pin in self.pinsSelect(pins):
             activities.append(pin.activity)
         return tuple(activities)
 
-    def _makePinsActive(self, pins: [int or str,] or slice):
-        for pin in self._pinsSelect(pins):
+    def makePinsActive(self, pins: [int or str, ] or slice):
+        for pin in self.pinsSelect(pins):
             pin.active()
 
-    def _makePinsPassive(self, pins: [int or str,] or slice):
-        for pin in self._pinsSelect(pins):
+    def makePinsPassive(self, pins: [int or str, ] or slice):
+        for pin in self.pinsSelect(pins):
             pin.passive()
 
-    def _setPinsActivity(self, pins: [int or str,] or slice, activity: bool or int):
-        for pin in self._pinsSelect(pins):
+    def setPinsActivity(self, pins: [int or str, ] or slice, activity: bool or int):
+        for pin in self.pinsSelect(pins):
             pin.activity = activity
 
-    def _setPinsActivities(self, pins: [int or str,] or slice, activities: [bool or int,] or bytes):
+    def setPinsActivities(self, pins: [int or str, ] or slice, activities: [bool or int, ] or bytes):
         activities = Component.normalisePinValues(activities)
         indexes = self.pinsIndexes(pins)
         if len(indexes) > len(activities):
@@ -207,29 +207,29 @@ class Component(ABC):
             raise error
 
     def getPinState(self, pin: int or str) -> [bool, bool]:
-        return self._pinSelect(pin).state
+        return self.pinSelect(pin).state
 
-    def _setPinState(self, pin: int or str, state: [bool or int, bool or int]):
-        self._pinSelect(pin).state = state
+    def setPinState(self, pin: int or str, state: [bool or int, bool or int]):
+        self.pinSelect(pin).state = state
 
     def getPinsStates(self, pins: [int or str,] or slice) -> [[bool, bool],]:
         states = list()
-        for pin in self._pinsSelect(pins):
+        for pin in self.pinsSelect(pins):
             states.append(pin.state)
         return tuple(states)
 
-    def _setPinsState(self, pins: [int or str,] or slice, state: [bool or int, bool or int]):
-        for pin in self._pinsSelect(pins):
+    def setPinsState(self, pins: [int or str, ] or slice, state: [bool or int, bool or int]):
+        for pin in self.pinsSelect(pins):
             pin.state = state
 
-    def _setPinsStates(self, pins: [int or str,] or slice, states: [[bool or int, bool or int],]):
+    def setPinsStates(self, pins: [int or str, ] or slice, states: [[bool or int, bool or int], ]):
         indexes = self.pinsIndexes(pins)
         if len(indexes) > len(states):
             raise ValueError(f"Cannot set pins states with fewer states given than pins ({self.pinsIdentifiers(indexes)} set to states: {states})")
         state = self.state
         try:
             for index in indexes:
-                self._setPinState(index, states[index - 1])
+                self.setPinState(index, states[index - 1])
         except Exception as error:
             self.state = state
             raise error
@@ -246,7 +246,7 @@ class Component(ABC):
         except KeyError:
             raise Component.StateError("pins", state)
         try:
-            self._setPinsStates(slice(None), pinsState)
+            self.setPinsStates(slice(None), pinsState)
         except Exception as error:
             self.state = prevState
             raise error
@@ -258,12 +258,12 @@ class Component(ABC):
 
     def connectPin(self, pin: int or str, connectedComponent: Component, connectedPin: int or str):
         if Component.isComponent(connectedComponent):
-            self._pinSelect(pin).connection = connectedComponent._pinSelect(connectedPin)
+            self.pinSelect(pin).connection = connectedComponent.pinSelect(connectedPin)
 
     def connectPins(self, pins: [int or str,] or slice, connectedComponent: Component, connectedPins: [int or str,] or slice):
         if Component.isComponent(connectedComponent):
             pins = self.pinsIndexes(pins)
-            connectedPins = connectedComponent._pinsSelect(connectedPins)
+            connectedPins = connectedComponent.pinsSelect(connectedPins)
             length = len(pins)
             if len(connectedPins) != length:
                 raise ValueError(f"Cannot connect {length} pins of {self} to {len(connectedPins)} pins of {connectedComponent} (Component.connectPins makes 1:1 connections)")
@@ -271,10 +271,10 @@ class Component(ABC):
                 self.connectPin(pins[index], connectedComponent, connectedPins[index])
 
     def disconnectPin(self, pin: int or str):
-        del self._pinSelect(pin).connection
+        del self.pinSelect(pin).connection
 
     def disconnectPins(self, pins: [int or str,] or slice):
-        pins = self._pinsSelect(pins)
+        pins = self.pinsSelect(pins)
         for pin in pins:
             del pin.connection
 
