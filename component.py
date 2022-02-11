@@ -50,9 +50,7 @@ class Component(ABC):
         if pinValues:
             if len(pinValues) > 0:
                 self.setPinsValues(slice(len(pinValues)),Component.normalisePinValues(pinValues))
-        if connections:
-            for component, mapping in connections:
-                self.connectComponent(component, mapping)
+        self.connectComponents(connections)
 
     def __del__(self):
         try:
@@ -258,7 +256,15 @@ class Component(ABC):
 
     def connectPin(self, pin: int or str, connectedComponent: Component, connectedPin: int or str):
         if Component.isComponent(connectedComponent):
-            self.pinSelect(pin).connection = connectedComponent.pinSelect(connectedPin)
+            nodes = [self.pinSelect(pin), connectedComponent.pinSelect(connectedPin)]
+            for node in range(2):
+                existingConnection = nodes[node].connection
+                if existingConnection is not None:
+                    if isinstance(existingConnection.node, Wire):
+                        nodes[node] = existingConnection.node
+                    else:
+                        nodes[node] = Wire((nodes[node], existingConnection.node))
+            Connection.createConnection(nodes[0], nodes[1])
 
     def connectPins(self, pins: [int or str,] or slice, connectedComponent: Component, connectedPins: [int or str,] or slice):
         if Component.isComponent(connectedComponent):
@@ -281,6 +287,10 @@ class Component(ABC):
     def connectComponent(self, component: Component, mapping: [[int or str, int or str],]):
         for pin1, pin2 in mapping:
             self.connectPin(pin1, component, pin2)
+
+    def connectComponents(self, connections: [[Component, [[int or str, int or str],]]]):
+        for component, mapping in connections:
+            self.connectComponent(component, mapping)
 
     @abstractmethod
     def response(self):
