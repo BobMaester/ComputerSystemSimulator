@@ -44,7 +44,7 @@ class Component(ABC):
         if isinstance(pins, int):
             pinsIterable = range(1, pins + 1)
         for pin in pinsIterable:
-            self._pins.append(Pin(self, str(pin), (False, False)))
+            self._pins.append(Pin(str(pin), (False, False)))
         self._pins = tuple(self._pins)
         del self.state
         if pinValues:
@@ -124,13 +124,13 @@ class Component(ABC):
         return self._pinSelect(pin).value
 
     def setPin(self, pin: int or str):
-        self._pinSelect(pin).set(self)
+        self._pinSelect(pin).set()
 
     def resetPin(self, pin: int or str):
-        self._pinSelect(pin).reset(self)
+        self._pinSelect(pin).reset()
 
     def setPinValue(self, pin: int or str, value: bool or int):
-        self._pinSelect(pin).setValue(self, value)
+        self._pinSelect(pin).value = value
 
     def getPins(self, pins: [int or str,] or slice) -> [bool,]:
         values = list()
@@ -140,15 +140,15 @@ class Component(ABC):
 
     def setPins(self, pins: [int or str,] or slice):
         for pin in self._pinsSelect(pins):
-            pin.set(self)
+            pin.set()
 
     def resetPins(self, pins: [int or str,] or slice):
         for pin in self._pinsSelect(pins):
-            pin.reset(self)
+            pin.reset()
 
     def setPinsValue(self, pins: [int or str,] or slice, value: bool or int):
         for pin in self._pinsSelect(pins):
-            pin.setValue(self, value)
+            pin.value = value
 
     def setPinsValues(self, pins: [int or str,] or slice, values: [bool or int,] or bytes):
         values = Component.normalisePinValues(values)
@@ -167,13 +167,13 @@ class Component(ABC):
         return self._pinSelect(pin).activity
 
     def _makePinActive(self, pin: int or str):
-        self._pinSelect(pin).active(self)
+        self._pinSelect(pin).active()
 
     def _makePinPassive(self, pin: int or str):
-        self._pinSelect(pin).passive(self)
+        self._pinSelect(pin).passive()
 
     def _setPinActivity(self, pin: int or str, activity: bool or int):
-        self._pinSelect(pin).setActivity(self, activity)
+        self._pinSelect(pin).activity = activity
 
     def getPinsActivities(self, pins: [int or str,] or slice) -> [bool,]:
         activities = list()
@@ -183,15 +183,15 @@ class Component(ABC):
 
     def _makePinsActive(self, pins: [int or str,] or slice):
         for pin in self._pinsSelect(pins):
-            pin.active(self)
+            pin.active()
 
     def _makePinsPassive(self, pins: [int or str,] or slice):
         for pin in self._pinsSelect(pins):
-            pin.passive(self)
+            pin.passive()
 
     def _setPinsActivity(self, pins: [int or str,] or slice, activity: bool or int):
         for pin in self._pinsSelect(pins):
-            pin.setActivity(self, activity)
+            pin.activity = activity
 
     def _setPinsActivities(self, pins: [int or str,] or slice, activities: [bool or int,] or bytes):
         activities = Component.normalisePinValues(activities)
@@ -210,7 +210,7 @@ class Component(ABC):
         return self._pinSelect(pin).state
 
     def _setPinState(self, pin: int or str, state: [bool or int, bool or int]):
-        self._pinSelect(pin).setState(self, state)
+        self._pinSelect(pin).state = state
 
     def getPinsStates(self, pins: [int or str,] or slice) -> [[bool, bool],]:
         states = list()
@@ -220,7 +220,7 @@ class Component(ABC):
 
     def _setPinsState(self, pins: [int or str,] or slice, state: [bool or int, bool or int]):
         for pin in self._pinsSelect(pins):
-            pin.setState(self, state)
+            pin.state = state
 
     def _setPinsStates(self, pins: [int or str,] or slice, states: [[bool or int, bool or int],]):
         indexes = self.pinsIndexes(pins)
@@ -254,7 +254,7 @@ class Component(ABC):
     @state.deleter
     def state(self):
         for pin in self._pins:
-            pin.setState(self, (False, False))
+            pin.state = (False, False)
 
     def connectPin(self, pin: int or str, connectedComponent: Component, connectedPin: int or str):
         if Component.isComponent(connectedComponent):
@@ -288,7 +288,7 @@ class Component(ABC):
 
     def retrievePinStates(self):
         for pin in self._pins:
-            pin.retrieveState(self)
+            pin.retrieveState()
 
     def respond(self):
         self.retrievePinStates()
@@ -383,9 +383,6 @@ class Node(ABC):
         pass
 
 class Pin(Node):
-    class UnauthorisedComponentError(Exception):
-        pass
-
     class SpecificConnection(Connection):
         def __init__(self, source: Node, target: Node, inverse: Connection = None):
             if not isinstance(target, Pin):
@@ -411,14 +408,12 @@ class Pin(Node):
                 raise Node.ExcludedNodeError
             return self._node.state
 
-    def __init__(self, component: Component, identifier: str, state: [bool or int, bool or int] = (False, False), connection: Connection or Node = None):
-        self._component = component
+    def __init__(self, identifier: str, state: [bool or int, bool or int] = (False, False), connection: Connection or Node = None):
         self._identifier = str(identifier)
         self._value, self._activity = BinElec.validateState(state)
         self._connection = None
         if connection is not None:
             self.connection = connection
-        Component.isComponent(component)
 
     def __del__(self):
         try:
@@ -430,49 +425,40 @@ class Pin(Node):
     def identifier(self) -> str:
         return self._identifier
 
-    def _authorise(self, authority: Component) -> bool:
-        if authority == self._component:
-            return True
-        return False
-
     @property
     def value(self) -> bool:
         return self._value
 
-    def set(self, authority: Component):
-        self._authorise(authority)
+    @value.setter
+    def value(self, value: bool or int):
+        self._value = int_to_bool(value)
+
+    def set(self):
         self._value = True
 
-    def reset(self, authority: Component):
-        self._authorise(authority)
+    def reset(self):
         self._value = False
-
-    def setValue(self, authority: Component, value: bool or int):
-        self._authorise(authority)
-        self._value = int_to_bool(value)
 
     @property
     def activity(self) -> bool:
         return self._activity
 
-    def active(self, authority: Component):
-        self._authorise(authority)
+    @activity.setter
+    def activity(self, activity: bool or int):
+        self._activity = int_to_bool(activity)
+
+    def active(self):
         self._activity = True
 
-    def passive(self, authority: Component):
-        self._authorise(authority)
+    def passive(self):
         self._activity = False
-
-    def setActivity(self, authority: Component, activity: bool or int):
-        self._authorise(authority)
-        self._activity = int_to_bool(activity)
 
     @property
     def state(self) -> [bool or int, bool or int]:
         return self._value, self._activity
 
-    def setState(self, authority: Component, state: [bool or int, bool or int]):
-        self._authorise(authority)
+    @state.setter
+    def state(self, state: [bool or int, bool or int]):
         prevValue, prevActivity = self._value, self._activity
         try:
             self._value, self._activity = int_to_bool(state[0]), int_to_bool(state[1])
@@ -498,12 +484,13 @@ class Pin(Node):
             self._connection = None
             del connection
 
-    def retrieveState(self, authority: Component = None, exclude: [Node,] = tuple()) -> [bool, bool]:
-        self._authorise(authority)
+    def retrieveState(self, exclude: [Node,] = tuple()) -> [bool, bool]:
+        if self in exclude:
+            raise Node.ExcludedNodeError(f"{self} is already excluded in {exclude}")
         if self._connection is None:
             self._value = self._activity = False
         else:
-            self._value, self._activity = BinElec.validateState(self._connection.retrieveState(list(exclude) + [self]))
+            self._value, self._activity = BinElec.validateState(self._connection.retrieveState(tuple(list(exclude) + [self])))
         return self.state
 
 class Wire(Node):
