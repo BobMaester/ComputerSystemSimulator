@@ -1,163 +1,185 @@
+from __future__ import annotations
 from processor import Processor
 from instruction_set import AddressingMode
 
-class AddressingModes: # TODO
-    class Absolute(AddressingMode): # a
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            pass
+class LabelModes:
+    @staticmethod
+    def immediateLabel(labelAddress: int, instructionAddress: int = None) -> bytes:
+        return labelAddress.to_bytes(2, "little")
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            pass
+    @staticmethod
+    def relativeLabel(labelAddress: int, instructionAddress: int) -> bytes:
+        return bytes([labelAddress - instructionAddress])
 
-    class AbsoluteIndexedIndirect(AddressingMode): # (a,x)
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            pass
+class Absolute(AddressingMode): # a
+    @staticmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            pass
+    @staticmethod
+    def fetchOperands(processor: Processor) -> [bool, bytes]:
+        pass
 
-    class XIndexedAbsolute(AddressingMode): # a,x
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            pass
+class AbsoluteIndexedIndirect(AddressingMode): # (a,x)
+    @staticmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            pass
+    @staticmethod
+    def fetchOperands(processor: Processor) -> [bool, bytes]:
+        pass
 
-    class YIndexedAbsolute(AddressingMode): # a,y
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            pass
+class XIndexedAbsolute(AddressingMode): # a,x
+    @staticmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            pass
+    @staticmethod
+    def fetchOperands(processor: Processor) -> [bool, bytes]:
+        pass
 
-    class AbsoluteIndirect(AddressingMode): # (a)
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            pass
+class YIndexedAbsolute(AddressingMode): # a,y
+    @staticmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            pass
+    @staticmethod
+    def fetchOperands(processor: Processor) -> [bool, bytes]:
+        pass
 
-    class Accumulator(AddressingMode): # A
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            pass
+class AbsoluteIndirect(AddressingMode): # (a)
+    @staticmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            pass
+    @staticmethod
+    def fetchOperands(processor: Processor) -> [bool, bytes]:
+        pass
 
-    class Immediate(AddressingMode): # #
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            pass
+class Accumulator(AddressingMode): # A
+    @staticmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            pass
+    @staticmethod
+    def fetchOperands(processor: Processor) -> [bool, bytes]:
+        pass
 
-    class Implied(AddressingMode): # i
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            if operandString == "":
-                return bytes(), tuple()
-            else:
-                raise AddressingMode.AddressingModeAssembleError("Implied addressing mode takes no operands")
+class Immediate(AddressingMode): # #
+    @staticmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            return True, bytes()
+    @staticmethod
+    def fetchOperands(processor: Processor) -> [bool, bytes]:
+        pass
 
-    class Relative(AddressingMode): # r
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            pass
+class Implied(AddressingMode): # i
+    @staticmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        if operandString == "":
+            return bytes(), tuple()
+        else:
+            raise AddressingMode.AddressingModeAssembleError("Implied addressing mode takes no operands")
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            pass
+class Relative(AddressingMode): # r
+    @staticmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
 
-    class Stack(AddressingMode): # s
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            pass
+    @staticmethod
+    def fetchOperands(processor: Processor) -> [bool, bytes]:
+        pass
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            pass
+class Stack(AddressingMode): # s
+    assemble = Implied.assemble
 
-    class ZeroPage(AddressingMode): # zp
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            pass
+    @staticmethod
+    def fetchOperands(processor: Processor) -> [bool, bytes]:
+        pass
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            pass
+class ZeroPage(AddressingMode): # zp
+    @staticmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
 
-    class ZeroPageIndexedIndirect(AddressingMode): # (zp,x)
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            pass
+    @staticmethod
+    def fetchOperands(processor: Processor) -> [bool, bytes]:
+        pass
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            pass
+class ZeroPageIndexedIndirect(AddressingMode): # (zp,x)
+    @staticmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
 
-    class XIndexedZeroPage(AddressingMode): # zp,x
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            pass
+    @staticmethod
+    def fetchOperands(processor: Processor) -> [bool, bytes]:
+        pass
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            pass
+class XIndexedZeroPage(AddressingMode): # zp,x
+    @staticmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
 
-    class YIndexedZeroPage(AddressingMode): # zp,y
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            pass
+    @staticmethod
+    def fetchOperands(processor: Processor) -> [bool, bytes]:
+        pass
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            pass
+class YIndexedZeroPage(AddressingMode): # zp,y
+    @staticmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
 
-    class ZeroPageIndirect(AddressingMode): # (zp)
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            pass
+    @staticmethod
+    def fetchOperands(processor: Processor) -> [bool, bytes]:
+        pass
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            pass
+class ZeroPageIndirect(AddressingMode): # (zp)
+    @staticmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
 
-    class ZeroPageIndirectIndexed(AddressingMode): # (zp),y
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            pass
+    @staticmethod
+    def fetchOperands(processor: Processor) -> [bool, bytes]:
+        pass
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            pass
+class ZeroPageIndirectIndexed(AddressingMode): # (zp),y
+    @staticmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
 
-    class BranchBit(AddressingMode): # zp,r
-        @staticmethod
-        def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-            pass
+    @staticmethod
+    def fetchOperands(processor: Processor) -> [bool, bytes]:
+        pass
 
-        @staticmethod
-        def fetchOperand(processor: Processor, fetchCount: int) -> [bool, bytes]:
-            pass
+class BranchBit(AddressingMode): # zp,r
+    @staticmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
 
-        @staticmethod
-        def assembleLabel(labelAddress: int, instructionAddress: int) -> bytes:
-            return AddressingMode.LabelModes.relativeLabel8Bit(labelAddress, instructionAddress)
+    @staticmethod
+    def fetchOperands(processor: Processor) -> [bool, bytes]:
+        pass
+
+    @staticmethod
+    def assembleLabel(labelAddress: int, instructionAddress: int) -> bytes:
+        return LabelModes.relativeLabel(labelAddress, instructionAddress)
+
+class AddressingModes:
+    Absolute = Absolute
+    AbsoluteIndexedIndirect = AbsoluteIndexedIndirect
+    XIndexedAbsolute = XIndexedAbsolute
+    YIndexedAbsolute = YIndexedAbsolute
+    AbsoluteIndirect = AbsoluteIndirect
+    Accumulator = Accumulator
+    Immediate = Immediate
+    Implied = Implied
+    Relative = Relative
+    Stack = Stack
+    ZeroPage = ZeroPage
+    ZeroPageIndexedIndirect = ZeroPageIndexedIndirect
+    XIndexedZeroPage = XIndexedZeroPage
+    YIndexedZeroPage = YIndexedZeroPage
+    ZeroPageIndirect = ZeroPageIndirect
+    ZeroPageIndirectIndexed = ZeroPageIndirectIndexed
+    BranchBit = BranchBit

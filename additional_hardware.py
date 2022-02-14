@@ -2,7 +2,7 @@ from component import Component
 from general import int_to_bool, BinaryElectric as BinElec
 
 class PowerSupply(Component):
-    def __init__(self, hasPower: bool or int = True, pinValues: [bool or int,] or bytes = tuple(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
+    def __init__(self, hasPower: bool or int = True, pinValues: [bool or int,] or bytes = bytes(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
         self._power = False
         super().__init__(
             ("Power", "Ground"),
@@ -56,81 +56,8 @@ class PowerSupply(Component):
     def response(self):
         self.setPinsStates((1, 2), ((self._power, True), (False, True)))
 
-class Clock(Component):
-    def __init__(self, output: bool or int = False, pinValues: [bool or int,] or bytes = tuple(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
-        self._output = False
-        super().__init__(
-            ("N/C", "GND", "VCC", "Output"),
-            pinValues, connections
-        )
-        self._output = int_to_bool(output)
-
-    @property
-    def output(self) -> bool:
-        return self._output
-
-    @output.setter
-    def output(self, output: bool):
-        self._output = int_to_bool(output)
-
-    def step(self):
-        self._output = not self._output
-
-    @property
-    def state(self) -> {str: any}:
-        state = Component.state.__get__(self)
-        state["output"] = self._output
-        return state
-
-    @state.setter
-    def state(self, state: {str: any}):
-        prevState = self.state
-        Component.state.__set__(self, state)
-        try:
-            outputState = state["output"]
-        except KeyError:
-            raise Component.StateError("output", state)
-        try:
-            self.output = outputState
-        except Exception as error:
-            self.state = prevState
-            raise error
-
-    @state.deleter
-    def state(self):
-        Component.state.__delete__(self)
-        self._output = False
-
-    def response(self):
-        high, low = self.getPinsStates(("VCC", "GND"))
-        self.makePinsPassive(slice(None))
-        if self._output:
-            self.setPinState("Output", high)
-        else:
-            self.setPinState("Output", low)
-
-class QuadNANDGate(Component):
-    def __init__(self, pinValues: [bool or int,] or bytes = tuple(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
-        super().__init__(
-            (
-                "A1", "B1", "Y1", "A2", "B2", "Y2", "GND",
-                "Y3", "A3", "B3", "Y4", "A4", "B4", "VCC"
-            ),
-            pinValues, connections
-        )
-
-    def response(self):
-        high, low = self.getPinsStates(("VCC", "GND"))
-        self.makePinsPassive(slice(None))
-        for gate in range(1, 5):
-            value = self.getPin(f"A{gate}") + self.getPin(f"B{gate}")
-            if value == 1:
-                self.setPinState(f"Y{gate}", high)
-            else:
-                self.setPinState(f"Y{gate}", low)
-
 class Button(Component):
-    def __init__(self, isPressed: bool or int = False, pinValues: [bool or int,] or bytes = tuple(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
+    def __init__(self, isPressed: bool or int = False, pinValues: [bool or int,] or bytes = bytes(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
         self._pressed = False
         super().__init__(4, pinValues, connections)
         self._pressed = int_to_bool(isPressed)
@@ -186,8 +113,80 @@ class Button(Component):
         self.setPinsStates((1, 2), side1)
         self.setPinsStates((3, 4), side2)
 
+class Clock(Component):
+    def __init__(self, output: bool or int = False, pinValues: [bool or int,] or bytes = bytes(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
+        self._output = False
+        super().__init__(
+            ("N/C", "GND", "VCC", "Output"),
+            pinValues, connections
+        )
+        self._output = int_to_bool(output)
+
+    @property
+    def output(self) -> bool:
+        return self._output
+
+    @output.setter
+    def output(self, output: bool):
+        self._output = int_to_bool(output)
+
+    def step(self):
+        self._output = not self._output
+
+    @property
+    def state(self) -> {str: any}:
+        state = Component.state.__get__(self)
+        state["output"] = self._output
+        return state
+
+    @state.setter
+    def state(self, state: {str: any}):
+        prevState = self.state
+        Component.state.__set__(self, state)
+        try:
+            outputState = state["output"]
+        except KeyError:
+            raise Component.StateError("output", state)
+        try:
+            self.output = outputState
+        except Exception as error:
+            self.state = prevState
+            raise error
+
+    @state.deleter
+    def state(self):
+        Component.state.__delete__(self)
+        self._output = False
+
+    def response(self):
+        high, low = self.getPinsStates(("VCC", "GND"))
+        self.makePinsPassive(slice(None))
+        if self._output:
+            self.setPinState("Output", high)
+        else:
+            self.setPinState("Output", low)
+
+class QuadNANDGate(Component):
+    def __init__(self, pinValues: [bool or int,] or bytes = bytes(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
+        super().__init__(
+            (
+                "A1", "B1", "Y1", "A2", "B2", "Y2", "GND",
+                "Y3", "A3", "B3", "Y4", "A4", "B4", "VCC"
+            ),
+            pinValues, connections
+        )
+
+    def response(self):
+        high, low = self.getPinsStates(("VCC", "GND"))
+        self.makePinsPassive(slice(None))
+        for gate in range(1, 5):
+            if self.getPin(f"A{gate}") and self.getPin(f"B{gate}"):
+                self.setPinState(f"Y{gate}", low)
+            else:
+                self.setPinState(f"Y{gate}", high)
+
 class Resistor(Component):
-    def __init__(self, pinValues: [bool or int,] or bytes = tuple(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
+    def __init__(self, pinValues: [bool or int,] or bytes = bytes(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
         super().__init__(2, pinValues, connections)
 
     def response(self):

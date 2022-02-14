@@ -1,7 +1,7 @@
 from simulator import Simulator
 from processor import Processor
 from memory import ReadOnlyMemory as ROM, RandomAccessMemory as RAM
-from additional_hardware import PowerSupply, Clock, QuadNANDGate as NAND, Button, Resistor
+from additional_hardware import PowerSupply, Button, Clock, QuadNANDGate as NAND, Resistor
 from assembler import Assembler
 from instruction_set import InstructionSet
 from instruction_set_65C02.instructions import instructions

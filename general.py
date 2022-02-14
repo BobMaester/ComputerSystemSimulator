@@ -31,6 +31,31 @@ def slice_to_tuple(value: slice, maximum: int = None, minimum: int = 0) -> [int,
         step = 1
     return tuple(range(start, stop, step))
 
+def strToDict(string: str):
+    dictionary = dict()
+    string = str(string).strip()
+    if string[0] == "{":
+        string = string[1:]
+    else:
+        string += "}"
+    bracketDepth = 0
+    value = ""
+    key = ""
+    for character in string:
+        if (character == "," or character == "}") and bracketDepth == 0:
+            exec(f"dictionary[{key}] = {value.strip()}")
+            value = key = ""
+        elif character == ":":
+            key = value.strip()
+            value = ""
+        else:
+            value += character
+        if character == "(" or character == "[" or character == "}":
+            bracketDepth += 1
+        elif character == ")" or character == "]" or character == "}":
+            bracketDepth -= 1
+    return dictionary
+
 class BinaryElectric:
     @staticmethod
     def validateState(state: [bool or int, bool or int]) -> [bool, bool]:

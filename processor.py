@@ -1,19 +1,17 @@
 from instruction_set import InstructionSet
 from component import Component
-from general import slice_to_tuple
+from general import int_to_bool, bytes_to_tuple, slice_to_tuple
 
 class Processor(Component):
     class InvalidRegisterError(Exception):
         pass
 
-    def __init__(self, instructionSet: InstructionSet, registerValues: [bytes,] or bytes = tuple(), pinValues: [bool or int,] or bytes = tuple(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
+    def __init__(self, instructionSet: InstructionSet, registerValues: [bytes,] or bytes = tuple(), currentClock: bool = False, pinValues: [bool or int,] or bytes = bytes(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
         if not isinstance(instructionSet, InstructionSet):
             raise TypeError(f"A processor's instruction set must inherit from InstructionSet ({instructionSet} does not)")
-        self._instructionSet = InstructionSet
+        self._instructionSet = instructionSet
         self._registers = {
             "PC"  : bytes(2),
-            "MAR" : bytes(2),
-            "MBR" : bytes(1),
             "IR"  : bytes(1),
             "P"   : bytes(1),
             "TCU" : bytes(1),
@@ -22,6 +20,7 @@ class Processor(Component):
             "X"   : bytes(1),
             "Y"   : bytes(1)
         }
+        self._currentClock = False
         super().__init__(
             (
                 "VPB",  "RDY",  "PHI1O", "IRQB",  "MLB",
@@ -37,6 +36,8 @@ class Processor(Component):
         )
         if registerValues:
             self.setRegisters(slice(None), registerValues)
+        if currentClock:
+            self._currentClock = True
 
     @property
     def registers(self) -> [str,]:
@@ -100,6 +101,7 @@ class Processor(Component):
     def state(self) -> {str: any}:
         state = Component.state.__get__(self)
         state["registers"] = self.getRegisters(slice(None))
+        state["currentClock"] = self._currentClock
         return state
 
     @state.setter
@@ -111,7 +113,12 @@ class Processor(Component):
         except KeyError:
             raise Component.StateError("registers", state)
         try:
+            currentClock = state["currentClock"]
+        except KeyError:
+            raise Component.StateError("currentClock", state)
+        try:
             self.setRegisters(slice(None), registersState)
+            self._currentClock = int_to_bool(currentClock)
         except Exception as error:
             self.state = prevState
             raise error
@@ -121,20 +128,29 @@ class Processor(Component):
         Component.state.__delete__(self)
         for register in self._registers:
             self._registers[register] = bytes(len(self._registers[register]))
+        self._currentClock = False
 
-    def execute(self): # TODO
-        # if TCU == \x00
-        #     currentInstruction = instructionSet.getInstruction(IR)
-        # else
-        #     currentInstruction[0].execute(self, currentInstruction[1])
-        #     if TCU == \x00
-        #         currentInstruction = (None, None)
-        #         TCU -= 1
-        # TCU += 1
-        pass
-
-    def response(self): # TODO
-        # # process pins
-        # if clock has changed
-        #     self.execute()
-        pass
+    def response(self): # TODO (incomplete)
+        high, low, clock = self.getPinsStates(("VDD", "VSS", "PHI2"))
+        self.setPinState("PHI2O", clock)
+        self.setPinState("PHI1O", (not clock[0], clock[1]))
+        if clock[0] == high[0] != self._currentClock:
+            self._currentClock = clock
+            TCU = self.getRegister("TCU")
+            incrementTCU = True
+            if TCU == bytes(1):
+                address = bytes_to_tuple(self.getRegister("PC"))
+                for bit in range(16):
+                    self.setPinState(f"A{bit}", (address, True))
+                self.setPinState("RWB", high)
+            else:
+                if TCU == bytes([1]):
+                    instruction = 0
+                    for bit in range(8):
+                        instruction += self.getRegister(f"D{bit}") * 2 ** bit
+                    self.setRegister("IR", instruction.to_bytes(1, "little"))
+                self._instructionSet.execute(self, self.getRegister("IR"))
+                if self.getRegister("TCU") == bytes(1):
+                    incrementTCU = False
+                if incrementTCU:
+                    self.setRegister("TCU", (int.from_bytes(TCU, "little") + 1).to_bytes(1, "little"))

@@ -2,6 +2,26 @@ from __future__ import annotations
 from component import Component
 from abc import ABC, abstractmethod
 
+class AddressingMode(ABC):
+    class AddressingModeAssembleError(Exception):
+        pass
+
+    class LabelsNotSupportedError(Exception):
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        pass
+
+    @staticmethod
+    def assembleLabel(labelAddress: int, instructionAddress: int) -> bytes:
+        raise AddressingMode.LabelsNotSupportedError("Addressing mode does not support the use of labels")
+
+    @staticmethod
+    def fetchOperands(processor: Component) -> [bool, bytes]:
+        return True, bytes()
+
 class Operation(ABC):
     mnemonic = ""
 
@@ -10,32 +30,20 @@ class Operation(ABC):
     def execute(processor: Component, addressingMode: AddressingMode):
         pass
 
-class AddressingMode(ABC):
-    class AddressingModeAssembleError(Exception):
-        pass
+class DynamicAddressingMode(AddressingMode):
+    def __init__(self, fetchOperand: callable, assemble: callable, assembleLabel: callable = AddressingMode.assembleLabel):
+        self._assemble = assemble
+        self._fetchOperand = fetchOperand
+        self._assembleLabel = assembleLabel
 
-    @staticmethod
-    @abstractmethod
-    def fetchOperand(processor: Component, fetchCount: int) -> [bool, bytes]:
-        pass
+    def assemble(self, operandString: str, address: int = 0, symbols: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        return self._assemble(operandString, address, symbols)
 
-    @staticmethod
-    @abstractmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-        pass
+    def assembleLabel(self, labelAddress: int, instructionAddress: int) -> bytes:
+        return self._assembleLabel(labelAddress, instructionAddress)
 
-    class LabelModes:
-        @staticmethod
-        def immediateLabel16Bit(labelAddress: int, instructionAddress: int = None) -> bytes:
-            return labelAddress.to_bytes(2, "little")
-
-        @staticmethod
-        def relativeLabel8Bit(labelAddress: int, instructionAddress: int) -> bytes:
-            return bytes([labelAddress - instructionAddress])
-
-    @staticmethod
-    def assembleLabel(labelAddress: int, instructionAddress: int) -> bytes:
-        return AddressingMode.LabelModes.immediateLabel16Bit(labelAddress)
+    def fetchOperands(self, processor) -> [bool, bytes]:
+        return self._fetchOperand(processor)
 
 class DynamicOperation(Operation):
     def __init__(self, mnemonic: str, execute: callable):
@@ -48,21 +56,6 @@ class DynamicOperation(Operation):
 
     def execute(self, processor: Component, addressingMode: AddressingMode):
         self._execute(processor, addressingMode)
-
-class DynamicAddressingMode(AddressingMode):
-    def __init__(self, fetchOperand: callable, assemble: callable, assembleLabel: callable = AddressingMode.LabelModes.immediateLabel16Bit):
-        self._assemble = assemble
-        self._fetchOperand = fetchOperand
-        self._assembleLabel = assembleLabel
-
-    def fetchOperand(self, processor: Component, fetchCount: int) -> [bool, bytes]:
-        return self._fetchOperand(processor, fetchCount)
-
-    def assemble(self, operandString: str, address: int = 0, symbols: [str,] = tuple()) -> [bytes, [[int, str],]]:
-        return self._assemble(operandString, address, symbols)
-
-    def assembleLabel(self, labelAddress: int, instructionAddress: int) -> bytes:
-        return self._assembleLabel(labelAddress, instructionAddress)
 
 class InstructionSet:
     @staticmethod
@@ -94,14 +87,14 @@ class InstructionSet:
         return tuple(validInstructions)
 
     @staticmethod
-    def instructionsFromOpcodeDict(opcodeDict: {int: [[Operation, AddressingMode],]}):
+    def instructionsFromOpcodeDict(opcodeDict: {int: [Operation, AddressingMode]}) -> [[Operation, AddressingMode],]:
         instructions = [None] * (max(tuple(opcodeDict.keys())) + 1)
         for opcode in opcodeDict:
             instructions[opcode] = InstructionSet.validateInstruction(opcodeDict[opcode])
         return InstructionSet.validateInstructions(instructions)
 
     @staticmethod
-    def instructionsFromOperationDict(operationsDict: {Operation: [[AddressingMode, int],]}) -> [Operation, InstructionSet]:
+    def instructionsFromOperationDict(operationsDict: {Operation: [[AddressingMode, int],]}) -> [[Operation, AddressingMode],]:
         instructions = {}
         for operation in operationsDict:
             for addressingMode, opcode in operationsDict[operation]:
@@ -112,7 +105,7 @@ class InstructionSet:
         return InstructionSet.instructionsFromOpcodeDict(instructions)
 
     @staticmethod
-    def instructionsFromAddressingModeDict(addressingModeDict: {AddressingMode: [[Operation, int],]}) -> [Operation, InstructionSet]:
+    def instructionsFromAddressingModeDict(addressingModeDict: {AddressingMode: [[Operation, int],]}) -> [[Operation, AddressingMode],]:
         instructions = {}
         for addressingMode in addressingModeDict:
             for operation, opcode in addressingModeDict[addressingMode]:
@@ -126,8 +119,12 @@ class InstructionSet:
         self._instructions = InstructionSet.validateInstructions(instructions)
 
     @property
-    def instructions(self) -> [[Operation, AddressingMode]]: # TODO
-        return self._instructions
+    def instructions(self) -> [[Operation, AddressingMode]]:
+        instructions = list()
+        for instruction in self._instructions:
+            if instruction != (None, None):
+                instructions.append(instruction)
+        return tuple(instructions)
 
     @property
     def operations(self) -> [Operation,]:
@@ -194,7 +191,7 @@ class InstructionSet:
         operation.execute(processor, addressingMode)
 
     @staticmethod
-    def initialiseFromOpcodeDict(opcodeDict: {int: [[Operation, AddressingMode],]}) -> InstructionSet:
+    def initialiseFromOpcodeDict(opcodeDict: {int: [Operation, AddressingMode]}) -> InstructionSet:
         return InstructionSet(InstructionSet.instructionsFromOpcodeDict(opcodeDict))
 
     @staticmethod

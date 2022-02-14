@@ -20,7 +20,7 @@ class Component(ABC):
             super().__init__(f"Insufficient data to load state ({state} has no '{key}' state)")
 
     @staticmethod
-    def isComponent(potentialComponent) -> True:
+    def isComponent(potentialComponent: Component) -> True:
         if potentialComponent is None:
             raise Component.NoComponentError()
         elif not isinstance(potentialComponent, Component):
@@ -29,16 +29,16 @@ class Component(ABC):
             return True
 
     @staticmethod
-    def normalisePinValues(pinValues: [bool or int,] or bytes):
-        normalisedValues = list()
+    def normalisePinValues(pinValues: [bool or int,] or bytes) -> [bool,]:
         if isinstance(pinValues, bytes):
             return bytes_to_tuple(pinValues)
         else:
+            normalisedValues = list()
             for value in pinValues:
                 normalisedValues.append(int_to_bool(value))
             return tuple(normalisedValues)
 
-    def __init__(self, pins: int or [str,], pinValues: [bool or int,] or bytes = tuple(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
+    def __init__(self, pins: int or [str,], pinValues: [bool or int,] or bytes = bytes(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
         self._pins = list()
         pinsIterable = pins
         if isinstance(pins, int):
@@ -112,7 +112,7 @@ class Component(ABC):
             identifiers.append(self._pins[index - 1].identifier)
         return identifiers
 
-    def pinsSelect(self, pins: [int or str, ] or slice) -> [Pin, ]:
+    def pinsSelect(self, pins: [int or str,] or slice) -> [Pin,]:
         pinsObjects = list()
         for index in self.pinsIndexes(pins):
             pinsObjects.append(self._pins[index - 1])
@@ -179,19 +179,19 @@ class Component(ABC):
             activities.append(pin.activity)
         return tuple(activities)
 
-    def makePinsActive(self, pins: [int or str, ] or slice):
+    def makePinsActive(self, pins: [int or str,] or slice):
         for pin in self.pinsSelect(pins):
             pin.active()
 
-    def makePinsPassive(self, pins: [int or str, ] or slice):
+    def makePinsPassive(self, pins: [int or str,] or slice):
         for pin in self.pinsSelect(pins):
             pin.passive()
 
-    def setPinsActivity(self, pins: [int or str, ] or slice, activity: bool or int):
+    def setPinsActivity(self, pins: [int or str,] or slice, activity: bool or int):
         for pin in self.pinsSelect(pins):
             pin.activity = activity
 
-    def setPinsActivities(self, pins: [int or str, ] or slice, activities: [bool or int, ] or bytes):
+    def setPinsActivities(self, pins: [int or str,] or slice, activities: [bool or int,] or bytes):
         activities = Component.normalisePinValues(activities)
         indexes = self.pinsIndexes(pins)
         if len(indexes) > len(activities):
@@ -216,11 +216,11 @@ class Component(ABC):
             states.append(pin.state)
         return tuple(states)
 
-    def setPinsState(self, pins: [int or str, ] or slice, state: [bool or int, bool or int]):
+    def setPinsState(self, pins: [int or str,] or slice, state: [bool or int, bool or int]):
         for pin in self.pinsSelect(pins):
             pin.state = state
 
-    def setPinsStates(self, pins: [int or str, ] or slice, states: [[bool or int, bool or int], ]):
+    def setPinsStates(self, pins: [int or str,] or slice, states: [[bool or int, bool or int],]):
         indexes = self.pinsIndexes(pins)
         if len(indexes) > len(states):
             raise ValueError(f"Cannot set pins states with fewer states given than pins ({self.pinsIdentifiers(indexes)} set to states: {states})")
@@ -292,13 +292,13 @@ class Component(ABC):
         for component, mapping in connections:
             self.connectComponent(component, mapping)
 
-    @abstractmethod
-    def response(self):
-        pass
-
     def retrievePinStates(self):
         for pin in self._pins:
             pin.retrieveState()
+
+    @abstractmethod
+    def response(self):
+        pass
 
     def respond(self):
         self.retrievePinStates()
@@ -324,6 +324,7 @@ class Connection(ABC):
         except KeyError:
             raise TypeError(f"No known connection type for node type {type(target)}")
 
+    @abstractmethod
     def __init__(self, source: Node, target: Node, inverse: Connection = None):
         self._node = target
         self._inverse = None
@@ -389,7 +390,7 @@ class Node(ABC):
             raise TypeError(f"Can only form connection using type Connection or Node not {type(connector).__name__} ({connector})")
 
     @abstractmethod
-    def retrieveState(self, exclude: [Node, ]) -> [bool, bool]:
+    def retrieveState(self, exclude: [Node,]) -> [bool, bool]:
         pass
 
 class Pin(Node):
@@ -413,7 +414,7 @@ class Pin(Node):
                         raise Connection.ConnectionNotFoundError(f"Pins is not connected to node {identifier}")
             del self._node.connection
 
-        def retrieveState(self, exclude: [Node,]):
+        def retrieveState(self, exclude: [Node,]) -> [bool, bool]:
             if self._node in exclude:
                 raise Node.ExcludedNodeError
             return self._node.state

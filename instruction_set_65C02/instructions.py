@@ -1,5 +1,5 @@
-from instruction_set_65C02.operations import Operations
 from instruction_set_65C02.addressing_modes import AddressingModes
+from instruction_set_65C02.operations import Operations
 
 instructions = (
     (Operations.BRK, AddressingModes.Stack),

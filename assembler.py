@@ -4,18 +4,16 @@ class Assembler:
     class AssemblerError(Exception):
         pass
 
-    def __init__(self, instructionSet: InstructionSet, symbols: {str: str} = None, labels: {str: int} = None):
+    def __init__(self, instructionSet: InstructionSet, symbols: {str: str} or [[str, str]] = None, labels: {str: int} or [[str, int]] = None):
         if not isinstance(instructionSet, InstructionSet):
             raise TypeError(f"An assembler must be associated with an instruction set ({instructionSet} is not valid)")
         self._instructionSet = instructionSet
-        if symbols is None:
-            self._symbols = dict()
-        elif isinstance(symbols, dict):
-            self._symbols = symbols
-        else:
-            raise TypeError(f"Symbols must be given as a dictionary with the key as the symbol identifier and the value as associated assembly (not {symbols})")
-        if labels is None:
-            self._labels = dict()
+        self._symbols = dict()
+        if symbols:
+            self.addSymbols(symbols)
+        self._labels = dict()
+        if labels:
+            self.addLabels(labels)
         elif isinstance(labels, dict):
             self._labels = labels
         else:
@@ -28,7 +26,17 @@ class Assembler:
     @property
     def symbols(self) -> {str: str}:
         return self._symbols.copy()
-    
+
+    @symbols.setter
+    def symbols(self, symbols: {str: str} or [[str, str],]):
+        prevSymbols = self._symbols
+        self._symbols = dict()
+        try:
+            self.addSymbols(symbols)
+        except Exception as error:
+            self._symbols = prevSymbols
+            raise error
+
     @symbols.deleter
     def symbols(self):
         self._symbols = dict()
@@ -38,17 +46,41 @@ class Assembler:
          return tuple(self._symbols.keys())
 
     def addSymbol(self, identifier: str, meaning: str):
-        if isinstance(meaning, int):
-            self.addLabel(identifier, meaning)
-        else:
-            self._symbols[str(identifier).strip()] = str(meaning).strip()
+        self._symbols[str(identifier).strip()] = str(meaning).strip()
+
+    def addSymbols(self, symbols: {str: str} or [[str, str],]):
+        prevSymbols = self._symbols
+        try:
+            if isinstance(symbols, dict):
+                for identifier in symbols:
+                    self.addSymbol(identifier, symbols[identifier])
+            else:
+                for identifier, meaning in symbols:
+                    self.addSymbol(identifier, meaning)
+        except Exception as error:
+            self._symbols = prevSymbols
+            raise error
 
     def removeSymbol(self, identifier: str):
         del self._symbols[identifier]
 
+    def removeSymbols(self, identifiers: [str,]):
+        for identifier in identifiers:
+            self.removeSymbol(identifier)
+
     @property
-    def labels(self) -> {str: str}:
+    def labels(self) -> {str: int}:
         return self._labels.copy()
+
+    @labels.setter
+    def labels(self, labels: {str: int} or [[str, int],]):
+        prevLabels = self._labels
+        self._labels = dict()
+        try:
+            self.addLabels(labels)
+        except Exception as error:
+            self._labels = prevLabels
+            raise error
 
     @labels.deleter
     def labels(self):
@@ -59,13 +91,29 @@ class Assembler:
         return tuple(self._labels.keys())
 
     def addLabel(self, identifier: str, address: int):
-        if isinstance(address, int):
-            self._labels[str(identifier).split()] = address
-        else:
-            self.addSymbol(identifier, str(address))
+        if not isinstance(address, int):
+            raise TypeError(f"Label must have an integer address (not {address} of type {type(address).__name__})")
+        self._labels[str(identifier).split()] = address
+
+    def addLabels(self, labels: {str: int} or [[str, int],]):
+        prevLabels = self._labels
+        try:
+            if isinstance(labels, dict):
+                for identifier in labels:
+                    self.addLabel(identifier, labels[identifier])
+            else:
+                for identifier, address in labels:
+                    self.addLabel(identifier, address)
+        except Exception as error:
+            self._labels = prevLabels
+            raise error
 
     def removeLabel(self, identifier: str):
         del self._labels[identifier]
+
+    def removeLabels(self, identifiers: [str,]):
+        for identifier in identifiers:
+            self.removeSymbol(identifier)
 
     def _preprocessing(self, assembly: str or [str,]) -> [[[str, str],], {int: str}]:
         if isinstance(assembly, str):
@@ -121,7 +169,7 @@ class Assembler:
         for address, label, addressingMode in labelUses:
             if label in labelAddresses:
                 labelAddress = labelAddresses[label]
-                self._labels[label] = labelAddress
+                self.addLabel(label, labelAddress)
             else:
                 labelAddress = self._labels[label]
             assembledLabel = addressingMode.assembleLabel(labelAddress, address)

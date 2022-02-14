@@ -1,9 +1,23 @@
 from component import Component
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from general import bytes_to_tuple, slice_to_tuple
 
-class Memory(Component, ABC):
-    class InvalidMemoryAddressError(Exception):
+class Memory(Component):
+    class InvalidMemoryAddressError(IndexError):
+        pass
+
+    @abstractmethod
+    def __init__(self, pins: [str,] or int, data: [bytes,] or bytes or str = bytes(), pinValues: [bool or int,] or bytes = bytes(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
+        self._data = bytes()
+        super().__init__(pins, pinValues, connections)
+        if data:
+            if isinstance(data, str):
+                self.load(data)
+            else:
+                self.writeAddresses(slice(len(data)), data)
+
+    @abstractmethod
+    def __len__(self) -> int:
         pass
 
     def validateAddress(self, address: int or bytes) -> int:
@@ -25,10 +39,6 @@ class Memory(Component, ABC):
         return tuple(validatedAddresses)
 
     @abstractmethod
-    def __len__(self) -> int:
-        pass
-
-    @abstractmethod
     def read(self, address: int or bytes) -> bytes:
         pass
 
@@ -44,18 +54,6 @@ class Memory(Component, ABC):
     def writeAddresses(self, addresses: [int or bytes,] or slice, values: [bytes,] or bytes):
         pass
 
-    @property
-    def data(self) -> bytes:
-        return self.readAddresses(slice(None))
-
-    @data.setter
-    def data(self, data: bytes or [bytes,]):
-        self.writeAddresses(slice(None), data)
-
-    @data.deleter
-    def data(self):
-        self.writeAddresses(slice(None), bytes())
-
     def __getitem__(self, addresses: int or bytes or [int or bytes,] or slice) -> bytes or [bytes,]:
         if isinstance(addresses, int) or isinstance(addresses, bytes):
             return self.read(addresses)
@@ -67,6 +65,18 @@ class Memory(Component, ABC):
             return self.write(addresses, values)
         else:
             return self.writeAddresses(addresses, values)
+
+    @property
+    def data(self) -> bytes:
+        return self.readAddresses(slice(None))
+
+    @data.setter
+    def data(self, data: bytes or [bytes,]):
+        self.writeAddresses(slice(None), data)
+
+    @data.deleter
+    def data(self):
+        self.writeAddresses(slice(None), bytes())
 
     def save(self, fileName: str):
         with open(fileName, "wb") as file:
@@ -102,26 +112,12 @@ class Memory(Component, ABC):
         del self.data
 
 class SpecificMemory(Memory):
-    def __init__(self, pins: [str,] = None, data: [bytes,] or bytes or str = bytes(), pinValues: [bool or int,] or bytes = bytes(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
+    def __init__(self, pins: [str,] or int, data: [bytes,] or bytes or str = bytes(), pinValues: [bool or int,] or bytes = bytes(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
         self._data = bytes()
-        super().__init__(pins, pinValues, connections)
-        if data is not None:
-            if len(data) > 0:
-                if isinstance(data, str):
-                    self.load(data)
-                else:
-                    self.writeAddresses(slice(len(data)), data)
-
-    @property
-    def data(self) -> bytes:
-        return self._data
-
-    @data.deleter
-    def data(self):
-        self._data = bytes(2 ** 15)
+        super().__init__(pins, data, pinValues, connections)
 
     def __len__(self) -> int:
-        return len(self._data)
+        return 32768 # == 2 ** 15
 
     def read(self, address: int or bytes) -> bytes:
         address = self.validateAddress(address)
@@ -147,6 +143,26 @@ class SpecificMemory(Memory):
         for index in range(len(addresses)):
             self.write(addresses[index], values[index : index + 1])
 
+    @property
+    def data(self) -> bytes:
+        return self._data
+
+    @data.setter
+    def data(self, data: bytes or [bytes,]):
+        if isinstance(data, bytes):
+            if len(data) != len(self._data):
+                raise ValueError(f"Data is incorrect length (cannot set as {data})")
+            self._data = data
+        else:
+            unaddressedData = bytes()
+            for address in data:
+                unaddressedData += address
+            self.data = unaddressedData
+
+    @data.deleter
+    def data(self):
+        self._data = bytes(2 ** 15)
+
     def response(self):
         high, low = self.getPinsStates((28, 14))
         self.makePinsPassive(slice(None))
@@ -171,7 +187,7 @@ class SpecificMemory(Memory):
                         self.setPinState(dataPins[bit], low)
 
 class ReadOnlyMemory(SpecificMemory):
-    def __init__(self, data: [bytes,] or bytes or str = tuple(), pinValues: [bool or int,] or bytes = tuple(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
+    def __init__(self, data: [bytes,] or bytes or str = bytes(), pinValues: [bool or int,] or bytes = bytes(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
         super().__init__(
             (
                 "A14",  "A12",  "A7",   "A6",   "A5",   "A4",   "A3",
@@ -182,7 +198,7 @@ class ReadOnlyMemory(SpecificMemory):
             data, pinValues, connections)
 
 class RandomAccessMemory(SpecificMemory):
-    def __init__(self, data: [bytes,] or bytes or str = tuple(), pinValues: [bool or int,] or bytes = tuple(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
+    def __init__(self, data: [bytes,] or bytes or str = bytes(), pinValues: [bool or int,] or bytes = bytes(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
         super().__init__(
             (
                 "A14",  "A12",  "A7",   "A6",   "A5",   "A4",   "A3",

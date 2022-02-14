@@ -1,9 +1,9 @@
 class UserInterface:
-    class UnknownResponseError(ValueError):
+    class UnknownBooleanResponseError(ValueError):
         pass
 
     @staticmethod
-    def format(data: any, indent: int = 0) -> str:
+    def format(data: any, indent: int = 0) -> str: # TODO trying to do too much
         if isinstance(data, str):
             return " " * indent + data
         elif isinstance(data, tuple) or isinstance(data, list):
@@ -105,7 +105,11 @@ class UserInterface:
         print(UserInterface.format(data))
 
     @staticmethod
-    def booleanInput(response: str, additionalResponses: {str: bool} = None) -> bool:
+    def input(prompt: any = "") -> str:
+        return input(UserInterface.format(prompt))
+
+    @staticmethod
+    def booleanInput(prompt: any = "", additionalResponses: {str: bool} = None) -> bool:
         knownResponses = {"yes": True, "no": False,
                           "true": True, "false": False,
                           "y": True, "n": False,
@@ -113,14 +117,11 @@ class UserInterface:
         if additionalResponses is not None:
             for newResponse in additionalResponses:
                 knownResponses[str(newResponse)] = bool(additionalResponses[newResponse])
+        response = UserInterface.input(prompt)
         try:
             return knownResponses[response.lower().strip()]
         except KeyError:
-            raise UserInterface.UnknownResponseError
-
-    @staticmethod
-    def input(prompt: any = "") -> str:
-        return input(UserInterface.format(prompt))
+            raise UserInterface.UnknownBooleanResponseError(f"'{response}' is not a known boolean response i.e. y/n")
 
     @staticmethod
     def menu(options: (str,)) -> int:
@@ -160,12 +161,12 @@ class UserInterface:
             open(fileName).close()
             while True:
                 try:
-                    overwrite = UserInterface.booleanInput(UserInterface.input("Overwrite? "), {"overwrite": True})
+                    overwrite = UserInterface.booleanInput("Overwrite? ", {"overwrite": True})
                     if overwrite:
                         break
                     else:
                         return False
-                except UserInterface.UnknownResponseError:
+                except UserInterface.UnknownBooleanResponseError:
                     UserInterface.output("/!\ COULD NOT INTERPRET")
         except FileNotFoundError:
             pass
@@ -193,29 +194,3 @@ class UserInterface:
                     exec(command)
                 except Exception as error:
                     UserInterface.output(f"/!\ COULD NOT EXECUTE ({type(error).__name__}): {error}")
-
-    @staticmethod
-    def strToDict(string: str):
-        dictionary = dict()
-        string = str(string).strip()
-        if string[0] == "{":
-            string = string[1:]
-        else:
-            string += "}"
-        bracketDepth = 0
-        value = ""
-        key = ""
-        for character in string:
-            if (character == "," or character == "}") and bracketDepth == 0:
-                exec(f"dictionary[{key}] = {value.strip()}")
-                value = key = ""
-            elif character == ":":
-                key = value.strip()
-                value = ""
-            else:
-                value += character
-            if character == "(" or character == "[" or character == "}":
-                bracketDepth += 1
-            elif character == ")" or character == "]" or character == "}":
-                bracketDepth -= 1
-        return dictionary

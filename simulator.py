@@ -1,6 +1,7 @@
 from user_interface import UserInterface
 from assembler import Assembler
 from component import Component
+from general import strToDict
 
 class Simulator:
     def __init__(self, components: {str: Component} = None, step: callable = lambda components: None, assemblers: {str: Assembler} = None):
@@ -62,11 +63,8 @@ class Simulator:
     def addComponent(self, name: str, component: Component):
         self._components[name] = component
 
-    def removeComponent(self, identifier: Component or str or int) -> Component:
-        key = self.identifyComponent(identifier)
-        component = self._components[key]
-        self._components.pop(key)
-        return component
+    def removeComponent(self, identifier: Component or str or int):
+        self._components.pop(self.identifyComponent(identifier))
 
     @property
     def assemblerDict(self) -> {str: Assembler}:
@@ -96,11 +94,8 @@ class Simulator:
     def addAssembler(self, name: str, assembler: Assembler):
         self._assemblers[name] = assembler
 
-    def removeAssembler(self, identifier: Assembler or str or int) -> Assembler:
-        key = self.identifyAssembler(identifier)
-        assembler = self._assemblers[key]
-        self._assemblers.pop(key)
-        return assembler
+    def removeAssembler(self, identifier: Assembler or str or int):
+        self._assemblers.pop(self.identifyAssembler(identifier))
 
     def step(self):
        self._step(self._components)
@@ -115,7 +110,7 @@ class Simulator:
             except TypeError:
                 UserInterface.output("/!\ STEPS MUST BE AN INTEGER")
 
-    def stateMenu(self, component) -> bool:
+    def stateMenu(self, component: Component or str or int) -> bool:
         component = self.getComponent(component)
         UserInterface.output(component.state)
         menuOptions = ("Raw state",
@@ -130,7 +125,7 @@ class Simulator:
                 prevState = component.state
                 state = UserInterface.input("State = ")
                 try:
-                    component.state = UserInterface.strToDict(state)
+                    component.state = strToDict(state)
                 except Exception as error:
                     UserInterface.output(f"/!\ COULD NOT LOAD STATE ({type(error).__name__}): {error}")
                     component.state = prevState
@@ -141,10 +136,10 @@ class Simulator:
             else:
                 UserInterface.output("/!\ UNKNOWN MENU ERROR")
 
-    def componentMenu(self, component) -> bool:
+    def componentMenu(self, component: Component or str or int) -> bool:
         menuOptions = ("State",
                        "Call method",
-                       "Delete component",
+                       "Remove component",
                        "Component select",
                        "Return to menu")
         while True:
@@ -161,8 +156,7 @@ class Simulator:
                     componentName = "_" + componentName
                 exec(f"UserInterface.console({componentName} = component)")
             elif choice == 3:
-                component = self.removeComponent(component)
-                del component
+                self.removeComponent(component)
                 return False
             elif choice == 4:
                 return False
@@ -187,37 +181,6 @@ class Simulator:
                     return
 
     @staticmethod
-    def machineCodeMenu(machineCode) -> bool:
-        menuOptions = ("Save to file",
-                       "Restart assembler",
-                       "Return to menu")
-        while True:
-            choice = UserInterface.menu(menuOptions)
-            if choice == 1:
-                UserInterface.saveFile(machineCode, True)
-            elif choice == 2:
-                return False
-            elif choice == 3:
-                return True
-            else:
-                UserInterface.output("/!\ UNKNOWN MENU ERROR")
-
-    @staticmethod
-    def normaliseAssembly(assembly: str or [str,]) -> [str,]:
-        if isinstance(assembly, str):
-            if assembly[-1] == "\n":
-                assembly = assembly[:-1]
-            return assembly.split("\n")
-        else:
-            return list(assembly)
-
-    @staticmethod
-    def displayAssembly(assembly: str or [str,]):
-        assembly = Simulator.normaliseAssembly(assembly)
-        for line in range(len(assembly)):
-            UserInterface.output(f"{line + 1}:  {assembly[line]}")
-
-    @staticmethod
     def writeAssembly(existingAssembly: str or [str,] = tuple()) -> [str,]:
         UserInterface.output("/UNDO to delete line\n/END to finish program\n")
         assembly = list()
@@ -238,8 +201,40 @@ class Simulator:
             else:
                 assembly += Simulator.normaliseAssembly(line)
 
-    def assemblyMenu(self, assembly: str or [str,], assembler: Assembler) -> bool:
+    @staticmethod
+    def normaliseAssembly(assembly: str or [str,]) -> [str,]:
+        if isinstance(assembly, str):
+            if assembly[-1] == "\n":
+                assembly = assembly[:-1]
+            return assembly.split("\n")
+        else:
+            return list(assembly)
+
+    @staticmethod
+    def displayAssembly(assembly: str or [str,]):
         assembly = Simulator.normaliseAssembly(assembly)
+        for line in range(len(assembly)):
+            UserInterface.output(f"{line + 1}:  {assembly[line]}")
+
+    @staticmethod
+    def machineCodeMenu(machineCode: bytes) -> bool:
+        menuOptions = ("Save to file",
+                       "Restart assembler",
+                       "Return to menu")
+        while True:
+            choice = UserInterface.menu(menuOptions)
+            if choice == 1:
+                UserInterface.saveFile(machineCode, True)
+            elif choice == 2:
+                return False
+            elif choice == 3:
+                return True
+            else:
+                UserInterface.output("/!\ UNKNOWN MENU ERROR")
+
+    def assemblyMenu(self, assembly: str or [str,], assembler: Assembler or str or int) -> bool:
+        assembly = Simulator.normaliseAssembly(assembly)
+        assembler = self.getAssembler(assembler)
         Simulator.displayAssembly(assembly)
         menuOptions = ("Save to file",
                        "Assemble",
@@ -253,7 +248,6 @@ class Simulator:
                     strAssembly += line + "\n"
                 UserInterface.saveFile(strAssembly)
             elif choice == 2:
-                assembler = self.getAssembler(assembler)
                 startAddress = UserInterface.input("Start address: ")
                 try:
                     startAddress = int(startAddress)
@@ -272,7 +266,7 @@ class Simulator:
             else:
                 UserInterface.output("/!\ UNKNOWN MENU ERROR")
 
-    def assemblerMenu(self, assembler) -> bool:
+    def assemblerMenu(self, assembler: Assembler or str or int) -> bool:
         menuOptions = ("Assemble from file",
                        "Write assembly",
                        "Remove instruction set",
