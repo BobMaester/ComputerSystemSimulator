@@ -135,7 +135,6 @@ class Processor(Component):
         self.setPinState("PHI2O", clock)
         self.setPinState("PHI1O", (not clock[0], clock[1]))
         if clock[0] == high[0] != self._currentClock:
-            self._currentClock = clock
             TCU = self.getRegister("TCU")
             incrementTCU = True
             if TCU == bytes(1):
@@ -154,3 +153,4 @@ class Processor(Component):
                     incrementTCU = False
                 if incrementTCU:
                     self.setRegister("TCU", (int.from_bytes(TCU, "little") + 1).to_bytes(1, "little"))
+        self._currentClock = clock

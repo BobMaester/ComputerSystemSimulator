@@ -101,15 +101,15 @@ class UserInterface:
             return " " * indent + str(data)
 
     @staticmethod
-    def output(data: any = ""):
+    def output(data: any = str()):
         print(UserInterface.format(data))
 
     @staticmethod
-    def input(prompt: any = "") -> str:
+    def input(prompt: any = str()) -> str:
         return input(UserInterface.format(prompt))
 
     @staticmethod
-    def booleanInput(prompt: any = "", additionalResponses: {str: bool} = None) -> bool:
+    def booleanInput(prompt: any = str(), additionalResponses: {str: bool} = None) -> bool:
         knownResponses = {"yes": True, "no": False,
                           "true": True, "false": False,
                           "y": True, "n": False,
@@ -125,7 +125,7 @@ class UserInterface:
 
     @staticmethod
     def menu(options: (str,)) -> int:
-        UserInterface.output("")
+        UserInterface.output(str())
         for option in range(len(options)):
             UserInterface.output(f"{option + 1}. {options[option]}")
         while True:

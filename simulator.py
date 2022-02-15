@@ -98,7 +98,7 @@ class Simulator:
         self._assemblers.pop(self.identifyAssembler(identifier))
 
     def step(self):
-       self._step(self._components)
+       self._step(self._components.copy())
 
     def runSteps(self):
         while True:
@@ -243,7 +243,7 @@ class Simulator:
         while True:
             choice = UserInterface.menu(menuOptions)
             if choice == 1:
-                strAssembly = ""
+                strAssembly = str()
                 for line in assembly:
                     strAssembly += line + "\n"
                 UserInterface.saveFile(strAssembly)

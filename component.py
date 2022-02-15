@@ -55,8 +55,11 @@ class Component(ABC):
     def __del__(self):
         try:
             for pin in self._pins:
-                del pin
-        except AttributeError:
+                try:
+                    del pin
+                except:
+                    pass
+        except:
             pass
 
     @property
@@ -343,7 +346,7 @@ class Connection(ABC):
         try:
             self.disconnect(self)
             del self._inverse
-        except AttributeError:
+        except:
             pass
 
     def __invert__(self) -> Connection:
@@ -429,7 +432,7 @@ class Pin(Node):
     def __del__(self):
         try:
             del self.connection
-        except AttributeError:
+        except:
             pass
 
     @property
@@ -472,7 +475,7 @@ class Pin(Node):
     def state(self, state: [bool or int, bool or int]):
         prevValue, prevActivity = self._value, self._activity
         try:
-            self._value, self._activity = int_to_bool(state[0]), int_to_bool(state[1])
+            self._value, self._activity = BinElec.validateState(state)
         except Exception as error:
             self._value, self._activity = prevValue, prevActivity
             raise error
@@ -528,7 +531,7 @@ class Wire(Node):
     def __del__(self):
         try:
             del self.connections
-        except AttributeError:
+        except:
             pass
 
     def __len__(self) -> int:

@@ -39,15 +39,15 @@ def strToDict(string: str):
     else:
         string += "}"
     bracketDepth = 0
-    value = ""
-    key = ""
+    value = str()
+    key = str()
     for character in string:
         if (character == "," or character == "}") and bracketDepth == 0:
             exec(f"dictionary[{key}] = {value.strip()}")
-            value = key = ""
+            value = key = str()
         elif character == ":":
             key = value.strip()
-            value = ""
+            value = str()
         else:
             value += character
         if character == "(" or character == "[" or character == "}":

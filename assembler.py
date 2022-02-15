@@ -14,10 +14,6 @@ class Assembler:
         self._labels = dict()
         if labels:
             self.addLabels(labels)
-        elif isinstance(labels, dict):
-            self._labels = labels
-        else:
-            raise TypeError(f"Labels must be given as a dictionary with the key as the label identifier and the value as the address in memory (not {labels})")
 
     @property
     def instructionSet(self) -> InstructionSet:
@@ -65,8 +61,13 @@ class Assembler:
         del self._symbols[identifier]
 
     def removeSymbols(self, identifiers: [str,]):
-        for identifier in identifiers:
-            self.removeSymbol(identifier)
+        prevSymbols = self._symbols
+        try:
+            for identifier in identifiers:
+                self.removeSymbol(identifier)
+        except Exception as error:
+            self._symbols = prevSymbols
+            raise error
 
     @property
     def labels(self) -> {str: int}:
@@ -112,8 +113,13 @@ class Assembler:
         del self._labels[identifier]
 
     def removeLabels(self, identifiers: [str,]):
-        for identifier in identifiers:
-            self.removeSymbol(identifier)
+        prevLabels = self._labels
+        try:
+            for identifier in identifiers:
+                self.removeLabel(identifier)
+        except Exception as error:
+            self._labels = prevLabels
+            raise error
 
     def _preprocessing(self, assembly: str or [str,]) -> [[[str, str],], {int: str}]:
         if isinstance(assembly, str):
@@ -141,19 +147,19 @@ class Assembler:
                 instructionCalls.append((mnemonic, operands))
         return instructionCalls, labelLines
 
-    def _assembleLine(self, line: [str, str], address: int = 0, labels: [str,] = tuple()) -> [AddressingMode, bytes, [[str, int]]]:
+    def _assembleLine(self, line: [str, str], labels: [str,] = tuple()) -> [AddressingMode, bytes, [[int, str]]]:
         mnemonic, operands = line
         operation = self._instructionSet.getOperationByMnemonic(mnemonic)
         for addressingMode in self._instructionSet.operationAddressingModes(operation):
             try:
-                assembledOperands, labelUses = addressingMode.assemble(operands, address, labels)
+                assembledOperands, labelUses = addressingMode.assemble(operands, labels)
                 opcode = self._instructionSet.getOpcode(operation, addressingMode)
                 return addressingMode, bytes((opcode,)) + assembledOperands, labelUses
             except AddressingMode.AddressingModeAssembleError:
                 pass
         raise Assembler.AssemblerError(f"Could not identify addressing mode: '{mnemonic} {operands}'")
 
-    def assemble(self, assembly: str or [str,], startAddress: int = 0) -> bytes: # TODO labels without placeholders
+    def assemble(self, assembly: str or [str,], startAddress: int = 0) -> bytes:
         machineCode = bytes()
         lines, labels = self._preprocessing(assembly)
         labelUses = list()
@@ -162,16 +168,16 @@ class Assembler:
         for line in range(len(lines)):
             if line in labels:
                 labelAddresses[labels[line]] = len(machineCode)
-            addressingMode, lineMachineCode, lineLabelUses = self._assembleLine(lines[line], startAddress + line, labelIdentifiers)
-            for identifier, byte in lineLabelUses:
+            addressingMode, lineMachineCode, lineLabelUses = self._assembleLine(lines[line], labelIdentifiers)
+            for byte, identifier in lineLabelUses:
                 labelUses.append((len(machineCode) + 1 + byte, identifier, addressingMode))
             machineCode += lineMachineCode
         for address, label, addressingMode in labelUses:
             if label in labelAddresses:
-                labelAddress = labelAddresses[label]
+                labelAddress = labelAddresses[label] + startAddress
                 self.addLabel(label, labelAddress)
             else:
                 labelAddress = self._labels[label]
-            assembledLabel = addressingMode.assembleLabel(labelAddress, address)
+            assembledLabel = addressingMode.assembleLabel(labelAddress, address + startAddress)
             machineCode = machineCode[:address] + assembledLabel + machineCode[address + len(assembledLabel):]
         return machineCode

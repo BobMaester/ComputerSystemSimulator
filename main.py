@@ -160,9 +160,18 @@ r2 = Resistor(
     )
 )
 
-def step(components): # TODO
+def step(components):
     components["System clock"].step()
-    pass
+    for component in ("Resistor R1",
+                      "Resistor R2",
+                      "RESET button",
+                      "System clock",
+                      "65C02 microprocessor",
+                      "NAND gates",
+                      "AT28C256 ROM",
+                      "HM62256B RAM"):
+        components["Power supply"].response()
+        components[component].respond()
 
 presetSimulator = Simulator(
     components = {

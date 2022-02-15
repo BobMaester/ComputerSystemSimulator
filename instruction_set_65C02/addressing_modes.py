@@ -13,7 +13,7 @@ class LabelModes:
 
 class Absolute(AddressingMode): # a
     @staticmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
         pass
 
     @staticmethod
@@ -22,7 +22,7 @@ class Absolute(AddressingMode): # a
 
 class AbsoluteIndexedIndirect(AddressingMode): # (a,x)
     @staticmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
         pass
 
     @staticmethod
@@ -31,7 +31,7 @@ class AbsoluteIndexedIndirect(AddressingMode): # (a,x)
 
 class XIndexedAbsolute(AddressingMode): # a,x
     @staticmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
         pass
 
     @staticmethod
@@ -40,7 +40,7 @@ class XIndexedAbsolute(AddressingMode): # a,x
 
 class YIndexedAbsolute(AddressingMode): # a,y
     @staticmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
         pass
 
     @staticmethod
@@ -49,7 +49,7 @@ class YIndexedAbsolute(AddressingMode): # a,y
 
 class AbsoluteIndirect(AddressingMode): # (a)
     @staticmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
         pass
 
     @staticmethod
@@ -58,7 +58,7 @@ class AbsoluteIndirect(AddressingMode): # (a)
 
 class Accumulator(AddressingMode): # A
     @staticmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
         pass
 
     @staticmethod
@@ -67,7 +67,7 @@ class Accumulator(AddressingMode): # A
 
 class Immediate(AddressingMode): # #
     @staticmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
         pass
 
     @staticmethod
@@ -76,15 +76,15 @@ class Immediate(AddressingMode): # #
 
 class Implied(AddressingMode): # i
     @staticmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
-        if operandString == "":
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        if operandString == str():
             return bytes(), tuple()
         else:
             raise AddressingMode.AddressingModeAssembleError("Implied addressing mode takes no operands")
 
 class Relative(AddressingMode): # r
     @staticmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
         pass
 
     @staticmethod
@@ -100,7 +100,7 @@ class Stack(AddressingMode): # s
 
 class ZeroPage(AddressingMode): # zp
     @staticmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
         pass
 
     @staticmethod
@@ -109,7 +109,7 @@ class ZeroPage(AddressingMode): # zp
 
 class ZeroPageIndexedIndirect(AddressingMode): # (zp,x)
     @staticmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
         pass
 
     @staticmethod
@@ -118,7 +118,7 @@ class ZeroPageIndexedIndirect(AddressingMode): # (zp,x)
 
 class XIndexedZeroPage(AddressingMode): # zp,x
     @staticmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
         pass
 
     @staticmethod
@@ -127,7 +127,7 @@ class XIndexedZeroPage(AddressingMode): # zp,x
 
 class YIndexedZeroPage(AddressingMode): # zp,y
     @staticmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
         pass
 
     @staticmethod
@@ -136,7 +136,7 @@ class YIndexedZeroPage(AddressingMode): # zp,y
 
 class ZeroPageIndirect(AddressingMode): # (zp)
     @staticmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
         pass
 
     @staticmethod
@@ -145,7 +145,7 @@ class ZeroPageIndirect(AddressingMode): # (zp)
 
 class ZeroPageIndirectIndexed(AddressingMode): # (zp),y
     @staticmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
         pass
 
     @staticmethod
@@ -154,7 +154,7 @@ class ZeroPageIndirectIndexed(AddressingMode): # (zp),y
 
 class BranchBit(AddressingMode): # zp,r
     @staticmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
         pass
 
     @staticmethod

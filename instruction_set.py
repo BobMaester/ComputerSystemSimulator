@@ -9,9 +9,12 @@ class AddressingMode(ABC):
     class LabelsNotSupportedError(Exception):
         pass
 
+    class LabelAddressError(ValueError):
+        pass
+
     @staticmethod
     @abstractmethod
-    def assemble(operandString: str, address: int = 0, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+    def assemble(operandString: str, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
         pass
 
     @staticmethod
@@ -23,7 +26,7 @@ class AddressingMode(ABC):
         return True, bytes()
 
 class Operation(ABC):
-    mnemonic = ""
+    mnemonic = str()
 
     @staticmethod
     @abstractmethod
@@ -31,13 +34,13 @@ class Operation(ABC):
         pass
 
 class DynamicAddressingMode(AddressingMode):
-    def __init__(self, fetchOperand: callable, assemble: callable, assembleLabel: callable = AddressingMode.assembleLabel):
+    def __init__(self, assemble: callable, assembleLabel: callable = AddressingMode.assembleLabel, fetchOperand: callable = AddressingMode.fetchOperands):
         self._assemble = assemble
         self._fetchOperand = fetchOperand
         self._assembleLabel = assembleLabel
 
-    def assemble(self, operandString: str, address: int = 0, symbols: [str,] = tuple()) -> [bytes, [[int, str],]]:
-        return self._assemble(operandString, address, symbols)
+    def assemble(self, operandString, labels: [str,] = tuple()) -> [bytes, [[int, str],]]:
+        return self._assemble(operandString, labels)
 
     def assembleLabel(self, labelAddress: int, instructionAddress: int) -> bytes:
         return self._assembleLabel(labelAddress, instructionAddress)
@@ -68,7 +71,6 @@ class InstructionSet:
 
     @staticmethod
     def validateInstructions(instructions: [[Operation, AddressingMode],]) -> [[Operation, AddressingMode],]:
-        instructions = list(instructions)
         validInstructions = list()
         mnemonics = {}
         for instruction in instructions:
