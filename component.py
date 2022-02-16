@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from general import int_to_bool, bytes_to_tuple, slice_to_tuple, BinaryElectric as BinElec
+from general import intToBool, bytesToTuple, sliceToTuple, BinaryElectric as BinElec
 
 class Component(ABC):
     class PinNotFoundError(KeyError):
@@ -31,11 +31,11 @@ class Component(ABC):
     @staticmethod
     def normalisePinValues(pinValues: [bool or int,] or bytes) -> [bool,]:
         if isinstance(pinValues, bytes):
-            return bytes_to_tuple(pinValues)
+            return bytesToTuple(pinValues)
         else:
             normalisedValues = list()
             for value in pinValues:
-                normalisedValues.append(int_to_bool(value))
+                normalisedValues.append(intToBool(value))
             return tuple(normalisedValues)
 
     def __init__(self, pins: int or [str,], pinValues: [bool or int,] or bytes = bytes(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
@@ -54,7 +54,9 @@ class Component(ABC):
 
     def __del__(self):
         try:
-            for pin in self._pins:
+            pins = self._pins
+            self._pins = None
+            for pin in pins:
                 try:
                     del pin
                 except:
@@ -101,7 +103,7 @@ class Component(ABC):
 
     def pinsIndexes(self, pins: [int or str,] or slice) -> [int,]:
         if isinstance(pins, slice):
-            return slice_to_tuple(pins, len(self._pins) + 1, 1)
+            return sliceToTuple(pins, len(self._pins) + 1, 1)
         else:
             indexes = list()
             for pin in pins:
@@ -345,7 +347,9 @@ class Connection(ABC):
     def __del__(self):
         try:
             self.disconnect(self)
-            del self._inverse
+            inverse = self._inverse
+            self._inverse = None
+            del inverse
         except:
             pass
 
@@ -445,7 +449,7 @@ class Pin(Node):
 
     @value.setter
     def value(self, value: bool or int):
-        self._value = int_to_bool(value)
+        self._value = intToBool(value)
 
     def set(self):
         self._value = True
@@ -459,7 +463,7 @@ class Pin(Node):
 
     @activity.setter
     def activity(self, activity: bool or int):
-        self._activity = int_to_bool(activity)
+        self._activity = intToBool(activity)
 
     def active(self):
         self._activity = True
@@ -556,8 +560,10 @@ class Wire(Node):
 
     @connections.deleter
     def connections(self):
-        for connection in self._connections:
-            self.disconnect(connection)
+        connections = self._connections
+        self._connections = list()
+        for connection in connections:
+            connection.disconnect(self)
 
     def getConnection(self, identifier: Connection or Node or int) -> Connection:
         if isinstance(identifier, Connection):
@@ -597,7 +603,7 @@ class Wire(Node):
             if connection.node not in exclude:
                 state = BinElec.combine(state, connection.retrieveState(exclude))
             if state == (True, True):
-                break
+                return True, True
         return state
 
     def __getitem__(self, identifier: Connection or Node or int) -> Connection:

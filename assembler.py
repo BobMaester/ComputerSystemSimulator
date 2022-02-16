@@ -45,7 +45,7 @@ class Assembler:
         self._symbols[str(identifier).strip()] = str(meaning).strip()
 
     def addSymbols(self, symbols: {str: str} or [[str, str],]):
-        prevSymbols = self._symbols
+        prevSymbols = self._symbols.copy()
         try:
             if isinstance(symbols, dict):
                 for identifier in symbols:
@@ -61,7 +61,7 @@ class Assembler:
         del self._symbols[identifier]
 
     def removeSymbols(self, identifiers: [str,]):
-        prevSymbols = self._symbols
+        prevSymbols = self._symbols.copy()
         try:
             for identifier in identifiers:
                 self.removeSymbol(identifier)
@@ -97,7 +97,7 @@ class Assembler:
         self._labels[str(identifier).split()] = address
 
     def addLabels(self, labels: {str: int} or [[str, int],]):
-        prevLabels = self._labels
+        prevLabels = self._labels.copy()
         try:
             if isinstance(labels, dict):
                 for identifier in labels:
@@ -113,7 +113,7 @@ class Assembler:
         del self._labels[identifier]
 
     def removeLabels(self, identifiers: [str,]):
-        prevLabels = self._labels
+        prevLabels = self._labels.copy()
         try:
             for identifier in identifiers:
                 self.removeLabel(identifier)
@@ -160,24 +160,25 @@ class Assembler:
         raise Assembler.AssemblerError(f"Could not identify addressing mode: '{mnemonic} {operands}'")
 
     def assemble(self, assembly: str or [str,], startAddress: int = 0) -> bytes:
-        machineCode = bytes()
-        lines, labels = self._preprocessing(assembly)
-        labelUses = list()
-        labelAddresses = dict()
-        labelIdentifiers = self.labelIdentifiers + tuple(labels.values())
-        for line in range(len(lines)):
-            if line in labels:
-                labelAddresses[labels[line]] = len(machineCode)
-            addressingMode, lineMachineCode, lineLabelUses = self._assembleLine(lines[line], labelIdentifiers)
-            for byte, identifier in lineLabelUses:
-                labelUses.append((len(machineCode) + 1 + byte, identifier, addressingMode))
-            machineCode += lineMachineCode
-        for address, label, addressingMode in labelUses:
-            if label in labelAddresses:
-                labelAddress = labelAddresses[label] + startAddress
-                self.addLabel(label, labelAddress)
-            else:
-                labelAddress = self._labels[label]
-            assembledLabel = addressingMode.assembleLabel(labelAddress, address + startAddress)
-            machineCode = machineCode[:address] + assembledLabel + machineCode[address + len(assembledLabel):]
-        return machineCode
+        prevSymbols = self._symbols.copy()
+        prevLabels = self._labels.copy()
+        try:
+            machineCode = bytes()
+            lines, labels = self._preprocessing(assembly)
+            labelUses = list()
+            labelIdentifiers = self.labelIdentifiers + tuple(labels.values())
+            for line in range(len(lines)):
+                if line in labels:
+                    self.addLabel(labels[line], len(machineCode) + startAddress)
+                addressingMode, lineMachineCode, lineLabelUses = self._assembleLine(lines[line], labelIdentifiers)
+                for byte, identifier in lineLabelUses:
+                    labelUses.append((len(machineCode) + byte, identifier, addressingMode))
+                machineCode += lineMachineCode
+            for address, label, addressingMode in labelUses:
+                assembledLabel = addressingMode.assembleLabel(self._labels[label], address + startAddress)
+                machineCode = machineCode[:address] + assembledLabel + machineCode[address + len(assembledLabel):]
+            return machineCode
+        except Exception as error:
+            self._symbols = prevSymbols
+            self._labels = prevLabels
+            raise error

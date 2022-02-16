@@ -1,5 +1,5 @@
 from component import Component
-from general import int_to_bool, BinaryElectric as BinElec
+from general import intToBool, BinaryElectric as BinElec
 
 class PowerSupply(Component):
     def __init__(self, hasPower: bool or int = True, pinValues: [bool or int,] or bytes = bytes(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
@@ -8,7 +8,7 @@ class PowerSupply(Component):
             ("Power", "Ground"),
             pinValues, connections
         )
-        self._power = int_to_bool(hasPower)
+        self._power = intToBool(hasPower)
 
     @property
     def power(self) -> bool:
@@ -16,7 +16,7 @@ class PowerSupply(Component):
 
     @power.setter
     def power(self, hasPower: bool or int):
-        self._power = int_to_bool(hasPower)
+        self._power = intToBool(hasPower)
 
     def togglePower(self):
         self._power = not self._power
@@ -60,7 +60,7 @@ class Button(Component):
     def __init__(self, isPressed: bool or int = False, pinValues: [bool or int,] or bytes = bytes(), connections: [[Component, [[int or str, int or str],]],] = tuple()):
         self._pressed = False
         super().__init__(4, pinValues, connections)
-        self._pressed = int_to_bool(isPressed)
+        self._pressed = intToBool(isPressed)
 
     @property
     def pressed(self) -> bool:
@@ -68,7 +68,7 @@ class Button(Component):
 
     @pressed.setter
     def pressed(self, isPressed: bool or int):
-        self._pressed = int_to_bool(isPressed)
+        self._pressed = intToBool(isPressed)
 
     def togglePress(self):
         self._pressed = not self._pressed
@@ -120,7 +120,7 @@ class Clock(Component):
             ("N/C", "GND", "VCC", "Output"),
             pinValues, connections
         )
-        self._output = int_to_bool(output)
+        self._output = intToBool(output)
 
     @property
     def output(self) -> bool:
@@ -128,7 +128,7 @@ class Clock(Component):
 
     @output.setter
     def output(self, output: bool):
-        self._output = int_to_bool(output)
+        self._output = intToBool(output)
 
     def step(self):
         self._output = not self._output

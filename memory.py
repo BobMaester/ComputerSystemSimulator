@@ -1,6 +1,6 @@
 from component import Component
 from abc import abstractmethod
-from general import bytes_to_tuple, slice_to_tuple
+from general import bytesToTuple, sliceToTuple
 
 class Memory(Component):
     class InvalidMemoryAddressError(IndexError):
@@ -32,7 +32,7 @@ class Memory(Component):
 
     def validateAddresses(self, addresses: [int or bytes,] or slice) -> [int,]:
         if isinstance(addresses, slice):
-            addresses = slice_to_tuple(addresses, len(self))
+            addresses = sliceToTuple(addresses, len(self))
         validatedAddresses = list()
         for address in addresses:
             validatedAddresses.append(self.validateAddress(address))
@@ -179,7 +179,7 @@ class SpecificMemory(Memory):
                     data += self.getPin(dataPins[bit] * (2 ** bit))
                 self.write(address, bytes([data]))
             elif modePins == (low[0], high[0]):
-                data = bytes_to_tuple(self.read(address))[::-1]
+                data = bytesToTuple(self.read(address))[::-1]
                 for bit in range(8):
                     if data[bit]:
                         self.setPinState(dataPins[bit], high)

@@ -1,4 +1,4 @@
-def int_to_bool(value: int or bool) -> bool:
+def intToBool(value: int or bool) -> bool:
     if isinstance(value, bool):
         return value
     elif isinstance(value, int):
@@ -9,17 +9,20 @@ def int_to_bool(value: int or bool) -> bool:
         else:
             raise ValueError(f"Cannot convert {value} to bool (integers must be 1 or 0 to be converted)")
     else:
-        raise TypeError(f"int_to_bool only converts integers to boolean not {type(value)} ({value})")
+        raise TypeError(f"intToBool only converts integers to boolean not {type(value)} ({value})")
 
-def bytes_to_tuple(value: bytes) -> [bool,]:
+def bytesToTuple(value: bytes) -> [bool,]:
+    if not isinstance(value, bytes):
+        raise TypeError(f"bytesToTuple converts bytes objects not {type(value).__name__}")
     output = list()
     for byte in value:
-        for bit in range(8, 0, -1):
-            output.append((byte // (2 ** bit)) == 1)
-            byte %= 2 ** bit
+        for bit in range(7, -1, -1):
+            bitValue = 2 ** bit
+            output.append(bool(byte // bitValue))
+            byte %= bitValue
     return tuple(output[::-1])
 
-def slice_to_tuple(value: slice, maximum: int = None, minimum: int = 0) -> [int,]:
+def sliceToTuple(value: slice, maximum: int = None, minimum: int = 0) -> [int,]:
     start, stop, step = value.start, value.stop, value.step
     if start is None:
         start = minimum
@@ -62,8 +65,8 @@ class BinaryElectric:
         if len(state) != 2:
             raise ValueError(f"Binary electric states must be composed of a value and activity (not {state})")
         value, activity = state
-        value = int_to_bool(value)
-        activity = int_to_bool(activity)
+        value = intToBool(value)
+        activity = intToBool(activity)
         return value, activity
 
     @staticmethod
