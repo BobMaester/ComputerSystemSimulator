@@ -4,9 +4,7 @@ class UserInterface:
 
     @staticmethod
     def format(data: any, indent: int = 0) -> str: # TODO trying to do too much
-        if isinstance(data, str):
-            return " " * indent + data
-        elif isinstance(data, tuple) or isinstance(data, list):
+        if isinstance(data, tuple) or isinstance(data, list):
             formattedItems = list()
             totalLength = 0
             multiLine = False

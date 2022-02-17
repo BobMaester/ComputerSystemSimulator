@@ -4,23 +4,27 @@ from component import Component
 from general import strToDict
 
 class Simulator:
+    @staticmethod
+    def validName(name: str) -> str:
+        name = name.strip()
+        if not name.isalnum():
+            acceptable = True
+            for character in name:
+                if not character.isalnum():
+                    if character not in (" ", "_"):
+                        acceptable = False
+                        break
+            if not acceptable:
+                raise ValueError(f"Component identifier must not contain symbols ({name})")
+        return name
+    
     def __init__(self, components: {str: Component} = None, step: callable = lambda components: None, assemblers: {str: Assembler} = None):
         self._components = dict()
         if isinstance(components, dict):
             for key in components:
                 component = components[key]
                 if Component.isComponent(component):
-                    key = str(key).strip()
-                    if not key.isalnum():
-                        acceptable = True
-                        for character in key:
-                            if not character.isalnum():
-                                if character not in (" ", "_"):
-                                    acceptable = False
-                                    break
-                        if not acceptable:
-                            raise ValueError(f"Component identifier must not contain symbols ({key})")
-                    self._components[key] = component
+                    self.addComponent(key, component)
         elif components is not None:
             raise TypeError(f"Components must be given as a dictionary where the key is an identifier used in menus ({components} is not valid)")
         self._step = step
@@ -30,8 +34,7 @@ class Simulator:
                 assembler = assemblers[key]
                 if not isinstance(assembler, Assembler):
                     raise TypeError(f"{assembler} of type {type(assembler).__name__} is not a valid assembler (does not inherit from Assembler)")
-                else:
-                    self._assemblers[str(key)] = assembler
+                self.addAssembler(key, assembler)
         elif assemblers is not None:
             raise TypeError(f"Assemblers must be given as a dictionary where the key is an identifier used in menus ({assemblers} is not valid)")
 
@@ -53,7 +56,7 @@ class Simulator:
         elif isinstance(identifier, Component):
             return self.componentNames[self.components.index(identifier)]
         elif isinstance(identifier, int):
-            return self.componentNames[identifier - 1]
+            return self.componentNames[identifier]
         else:
             raise TypeError(f"Cannot identify Component using {identifier} of type {type(identifier).__name__}")
 
@@ -61,7 +64,7 @@ class Simulator:
         return self._components[self.identifyComponent(identifier)]
 
     def addComponent(self, name: str, component: Component):
-        self._components[name] = component
+        self._components[Simulator.validName(name)] = component
 
     def removeComponent(self, identifier: Component or str or int):
         self._components.pop(self.identifyComponent(identifier))
@@ -84,7 +87,7 @@ class Simulator:
         elif isinstance(identifier, Assembler):
             return self.assemblerNames[self.assemblers.index(identifier)]
         elif isinstance(identifier, int):
-            return self.assemblerNames[identifier - 1]
+            return self.assemblerNames[identifier]
         else:
             raise TypeError(f"Cannot identify Assembler using {identifier} of type {type(identifier).__name__}")
 
@@ -92,7 +95,7 @@ class Simulator:
         return self._assemblers[self.identifyAssembler(identifier)]
 
     def addAssembler(self, name: str, assembler: Assembler):
-        self._assemblers[name] = assembler
+        self._assemblers[Simulator.validName(name)] = assembler
 
     def removeAssembler(self, identifier: Assembler or str or int):
         self._assemblers.pop(self.identifyAssembler(identifier))
@@ -113,10 +116,7 @@ class Simulator:
     def stateMenu(self, component: Component or str or int) -> bool:
         component = self.getComponent(component)
         UserInterface.output(component.state)
-        menuOptions = ("Raw state",
-                       "Load state",
-                       "Back",
-                       "Return to menu")
+        menuOptions = ("Raw state", "Load state", "Back", "Return to main menu")
         while True:
             choice = UserInterface.menu(menuOptions)
             if choice == 1:
@@ -137,11 +137,7 @@ class Simulator:
                 UserInterface.output("/!\ UNKNOWN MENU ERROR")
 
     def componentMenu(self, component: Component or str or int) -> bool:
-        menuOptions = ("State",
-                       "Call method",
-                       "Remove component",
-                       "Component select",
-                       "Return to menu")
+        menuOptions = ("State", "Call method", "Remove component", "Component select", "Return to main menu")
         while True:
             choice = UserInterface.menu(menuOptions)
             if choice == 1:
@@ -169,16 +165,16 @@ class Simulator:
         while True:
             if len(self._components) == 0:
                 return
-            menuOptions = self.componentNames + ("Return to menu",)
+            menuOptions = self.componentNames + ("Return to main menu",)
             choice = UserInterface.menu(menuOptions)
             if choice == len(menuOptions):
                 return
-            elif choice > len(menuOptions) or choice < 1:
-                UserInterface.output("/!\ UNKNOWN MENU ERROR")
-            else:
+            elif 1 <= choice <= len(menuOptions):
                 returnDepth = self.componentMenu(self.getComponent(choice))
                 if returnDepth:
                     return
+            else:
+                UserInterface.output("/!\ UNKNOWN MENU ERROR")
 
     @staticmethod
     def writeAssembly(existingAssembly: str or [str,] = tuple()) -> [str,]:
@@ -218,9 +214,7 @@ class Simulator:
 
     @staticmethod
     def machineCodeMenu(machineCode: bytes) -> bool:
-        menuOptions = ("Save to file",
-                       "Restart assembler",
-                       "Return to menu")
+        menuOptions = ("Save to file", "Restart assembler", "Return to main menu")
         while True:
             choice = UserInterface.menu(menuOptions)
             if choice == 1:
@@ -236,10 +230,7 @@ class Simulator:
         assembly = Simulator.normaliseAssembly(assembly)
         assembler = self.getAssembler(assembler)
         Simulator.displayAssembly(assembly)
-        menuOptions = ("Save to file",
-                       "Assemble",
-                       "Continue writing",
-                       "Discard")
+        menuOptions = ("Save to file", "Assemble", "Continue writing", "Discard")
         while True:
             choice = UserInterface.menu(menuOptions)
             if choice == 1:
@@ -267,11 +258,7 @@ class Simulator:
                 UserInterface.output("/!\ UNKNOWN MENU ERROR")
 
     def assemblerMenu(self, assembler: Assembler or str or int) -> bool:
-        menuOptions = ("Assemble from file",
-                       "Write assembly",
-                       "Remove instruction set",
-                       "Instruction set select",
-                       "Return to menu")
+        menuOptions = ("Assemble from file", "Write assembly", "Remove assembler", "Assembler select", "Return to main menu")
         while True:
             choice = UserInterface.menu(menuOptions)
             if choice == 1:
@@ -300,26 +287,21 @@ class Simulator:
         while True:
             if len(self._assemblers) == 0:
                 return
-            menuOptions = self.assemblerNames + ("Return to menu",)
+            menuOptions = self.assemblerNames + ("Return to main menu",)
             choice = UserInterface.menu(menuOptions)
             if choice == len(menuOptions):
                 return
-            elif choice > len(menuOptions) or choice < 1:
-                UserInterface.output("/!\ UNKNOWN MENU ERROR")
-            else:
-                returnDepth = self.assemblerMenu(choice)
+            elif 1 <= choice <= len(menuOptions):
+                returnDepth = self.assemblerMenu(self.getAssembler(choice))
                 if returnDepth:
                     return
+            else:
+                UserInterface.output("/!\ UNKNOWN MENU ERROR")
 
     def mainMenu(self):
         UserInterface.output("===== Computer System Simulator =====")
         while True:
-            menuOptions = ["Step",
-                           "Run steps",
-                           "Components",
-                           "Assembler",
-                           "Console",
-                           "End"]
+            menuOptions = ["Step", "Run steps", "Components", "Assembler", "Console", "End"]
             if len(self._components) == 0:
                 menuOptions.remove("Components")
             if len(self._assemblers) == 0:
