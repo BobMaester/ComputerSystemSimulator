@@ -94,7 +94,7 @@ class Assembler:
     def addLabel(self, identifier: str, address: int):
         if not isinstance(address, int):
             raise TypeError(f"Label must have an integer address (not {address} of type {type(address).__name__})")
-        self._labels[str(identifier).split()] = address
+        self._labels[str(identifier).strip()] = address
 
     def addLabels(self, labels: {str: int} or [[str, int],]):
         prevLabels = self._labels.copy()
@@ -129,22 +129,27 @@ class Assembler:
         instructionCalls = list()
         labelLines = dict()
         for line in lines:
-            line = line.strip()
-            if line[-1] == ":":
-                labelLines[len(instructionCalls)] = line[:-1]
-            elif "=" in line:
-                split = line.index("=")
-                self.addSymbol(line[:split], line[split + 1:])
-            else:
-                try:
-                    split = line.index(" ")
-                except ValueError:
-                    split = len(line)
-                mnemonic = line[:split]
-                operands = line[split:].strip()
-                for symbol in self.symbols:
-                    operands = operands.replace(symbol, self.symbols[symbol])
-                instructionCalls.append((mnemonic, operands))
+            try:
+                line = line[:line.index(";")]
+            except ValueError:
+                pass
+            if line:
+                line = line.strip()
+                if line[-1] == ":":
+                    labelLines[len(instructionCalls)] = line[:-1]
+                elif "=" in line:
+                    split = line.index("=")
+                    self.addSymbol(line[:split], line[split + 1:])
+                else:
+                    try:
+                        split = line.index(" ")
+                    except ValueError:
+                        split = len(line)
+                    mnemonic = line[:split]
+                    operands = line[split:].strip()
+                    for symbol in self.symbols:
+                        operands = operands.replace(symbol, self.symbols[symbol])
+                    instructionCalls.append((mnemonic, operands))
         return instructionCalls, labelLines
 
     def _assembleLine(self, line: [str, str], labels: [str,] = tuple()) -> [AddressingMode, bytes, [[int, str]]]:

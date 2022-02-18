@@ -110,8 +110,8 @@ class Button(Component):
         side2 = BinElec.combine(pin3, pin4)
         if self._pressed:
             side1 = side2 = BinElec.combine(side1, side2)
-        self.setPinsStates((1, 2), side1)
-        self.setPinsStates((3, 4), side2)
+        self.setPinsState((1, 2), side1)
+        self.setPinsState((3, 4), side2)
 
 class Clock(Component):
     def __init__(self, output: bool or int = False, pinValues: [bool or int,] or bytes = bytes(), connections: [[Component, [[int or str, int or str],]],] = tuple()):

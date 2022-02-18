@@ -1,0 +1,11 @@
+; an example program
+NOP
+
+
+ start:
+PHA
+nop
+ Pla
+
+Symbol = $2142 ; an absolute address
+; LDA Symbol

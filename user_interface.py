@@ -3,7 +3,7 @@ class UserInterface:
         pass
 
     @staticmethod
-    def format(data: any, indent: int = 0) -> str: # TODO trying to do too much
+    def format(data: any, indent: int = 0) -> str:
         if isinstance(data, tuple) or isinstance(data, list):
             formattedItems = list()
             totalLength = 0
@@ -122,7 +122,7 @@ class UserInterface:
             raise UserInterface.UnknownBooleanResponseError(f"'{response}' is not a known boolean response i.e. y/n")
 
     @staticmethod
-    def menu(options: (str,)) -> int:
+    def menu(options: [str,]) -> int:
         UserInterface.output(str())
         for option in range(len(options)):
             UserInterface.output(f"{option + 1}. {options[option]}")
@@ -179,9 +179,8 @@ class UserInterface:
     @staticmethod
     def console(**kwargs):
         for key, arg in kwargs.items():
-            keyWord = key
             exec(f"{key} = arg")
-            UserInterface.output(f'{keyWord} = {arg}')
+            UserInterface.output(f'{key} = {arg}')
         UserInterface.output("/END to exit console\n")
         while True:
             command = UserInterface.input()

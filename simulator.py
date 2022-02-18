@@ -170,32 +170,11 @@ class Simulator:
             if choice == len(menuOptions):
                 return
             elif 1 <= choice <= len(menuOptions):
-                returnDepth = self.componentMenu(self.getComponent(choice))
+                returnDepth = self.componentMenu(self.getComponent(choice - 1))
                 if returnDepth:
                     return
             else:
                 UserInterface.output("/!\ UNKNOWN MENU ERROR")
-
-    @staticmethod
-    def writeAssembly(existingAssembly: str or [str,] = tuple()) -> [str,]:
-        UserInterface.output("/UNDO to delete line\n/END to finish program\n")
-        assembly = list()
-        if existingAssembly:
-            assembly = Simulator.normaliseAssembly(existingAssembly)
-            Simulator.displayAssembly(assembly)
-        while True:
-            line = UserInterface.input(f"{len(assembly) + 1}:  ")
-            if line.strip().lower() == "/end":
-                UserInterface.output()
-                return tuple(assembly)
-            elif line.strip().lower() == "/undo":
-                if len(assembly) == 0:
-                    UserInterface.output("/!\ NO LINE TO UNDO")
-                else:
-                    del assembly[len(assembly) - 1]
-                    UserInterface.output("LINE UNDONE")
-            else:
-                assembly += Simulator.normaliseAssembly(line)
 
     @staticmethod
     def normaliseAssembly(assembly: str or [str,]) -> [str,]:
@@ -205,6 +184,31 @@ class Simulator:
             return assembly.split("\n")
         else:
             return list(assembly)
+
+    @staticmethod
+    def writeAssembly(existingAssembly: str or [str,] = tuple()) -> [str,]:
+        UserInterface.output("/UNDO to delete line\n/END to finish program\n")
+        assembly = list()
+        if existingAssembly:
+            assembly = Simulator.normaliseAssembly(existingAssembly)
+            Simulator.displayAssembly(assembly)
+        while True:
+            line = UserInterface.input(f"{len(assembly) + 1}: ")
+            if line:
+                if line.strip().lower() == "/end":
+                    UserInterface.output()
+                    Simulator.displayAssembly(assembly)
+                    return tuple(assembly)
+                elif line.strip().lower() == "/undo":
+                    if len(assembly) == 0:
+                        UserInterface.output("/!\ NO LINE TO UNDO")
+                    else:
+                        del assembly[len(assembly) - 1]
+                        UserInterface.output("LINE UNDONE")
+                else:
+                    assembly += Simulator.normaliseAssembly(line)
+            else:
+                assembly.append("")
 
     @staticmethod
     def displayAssembly(assembly: str or [str,]):
@@ -228,8 +232,6 @@ class Simulator:
 
     def assemblyMenu(self, assembly: str or [str,], assembler: Assembler or str or int) -> bool:
         assembly = Simulator.normaliseAssembly(assembly)
-        assembler = self.getAssembler(assembler)
-        Simulator.displayAssembly(assembly)
         menuOptions = ("Save to file", "Assemble", "Continue writing", "Discard")
         while True:
             choice = UserInterface.menu(menuOptions)
@@ -243,6 +245,7 @@ class Simulator:
                 try:
                     startAddress = int(startAddress)
                     try:
+                        assembler = self.getAssembler(assembler)
                         machineCode = assembler.assemble(assembly, startAddress)
                         UserInterface.output(machineCode)
                         return Simulator.machineCodeMenu(machineCode)
@@ -265,6 +268,7 @@ class Simulator:
                 success, assembly = UserInterface.loadFile()
                 if success:
                     assembly = Simulator.normaliseAssembly(assembly)
+                    Simulator.displayAssembly(assembly)
                     returnDepth = self.assemblyMenu(assembly, assembler)
                     if returnDepth:
                         return True
@@ -292,7 +296,7 @@ class Simulator:
             if choice == len(menuOptions):
                 return
             elif 1 <= choice <= len(menuOptions):
-                returnDepth = self.assemblerMenu(self.getAssembler(choice))
+                returnDepth = self.assemblerMenu(self.getAssembler(choice - 1))
                 if returnDepth:
                     return
             else:
